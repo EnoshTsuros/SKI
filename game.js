@@ -669,10 +669,12 @@ shootgunImg.onload = () => {
     }
 };
 
+let gunFrameIndex = 0;
+
 // Replace drawGun to use the first shootgun image
 function drawGun() {
     const barHeight = 28;
-    const gunImg = shootgunImages[0];
+    const gunImg = shootgunImages[gunFrameIndex];
     if (gunImg) {
         const gunWidth = gunImg.width;
         const gunHeight = gunImg.height;
@@ -809,4 +811,16 @@ function draw() {
     drawGun();
     drawFireball();
     drawStatusBar();
-} 
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        gunFrameIndex = 1;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+        gunFrameIndex = 0;
+    }
+}); 
