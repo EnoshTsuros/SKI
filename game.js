@@ -103,6 +103,10 @@ let faceDirection = 'straight'; // 'left', 'right', 'straight'
 const wallTexture = new Image();
 wallTexture.src = 'doom_wall.png';
 
+// Load building wall texture
+const buildingWallTexture = new Image();
+buildingWallTexture.src = 'building_wall.png';
+
 // Only start the game loop after the wall texture is loaded
 let textureLoaded = false;
 wallTexture.onload = () => {
@@ -154,6 +158,7 @@ function castRay(angle) {
     let hit = false;
     let side; // 0 for vertical, 1 for horizontal
     let perpWallDist;
+    let wallType = 0;
 
     while (!hit) {
         // Jump to next map square, either in x-direction or y-direction
@@ -166,8 +171,11 @@ function castRay(angle) {
             mapY += stepY;
             side = 1; // horizontal wall
         }
-        // Check if ray has hit a wall
-        if (map[mapY][mapX] === 1) hit = true;
+        // Check if ray has hit a wall or building wall
+        if (map[mapY][mapX] === 1 || map[mapY][mapX] === 2) {
+            hit = true;
+            wallType = map[mapY][mapX];
+        }
     }
 
     // Calculate distance to the point of impact
@@ -192,7 +200,8 @@ function castRay(angle) {
         hitWall: true,
         wallX: wallX,
         rayDirX,
-        rayDirY
+        rayDirY,
+        wallType
     };
 }
 
@@ -221,31 +230,31 @@ function draw3DView() {
     // Cast rays and draw walls
     for (let i = 0; i < NUM_RAYS; i++) {
         const currentAngle = rayAngle + i * angleStep;
-        const { distance, wallSide, hitWall, wallX, rayDirX, rayDirY } = castRay(currentAngle);
+        const { distance, wallSide, hitWall, wallX, rayDirX, rayDirY, wallType } = castRay(currentAngle);
         if (hitWall && distance < MAX_DEPTH) {
             const wallHeight = (canvas.height / distance) * 0.5;
             if (wallHeight >= 1) {
                 const shadowIntensity = Math.min(1, distance / MAX_SHADOW_DISTANCE);
                 const shadowFactor = 1 - (shadowIntensity * WALL_SHADOW_FACTOR);
                 const yTop = (canvas.height - wallHeight) / 2;
-                if (wallTexture.complete && wallTexture.naturalWidth > 0) {
-                    const texWidth = wallTexture.width;
-                    const texHeight = wallTexture.height;
-                    let texX;
+                let texture;
+                if (wallType === 2) {
+                    texture = buildingWallTexture;
+                } else {
+                    texture = wallTexture;
+                }
+                if (texture.complete && texture.naturalWidth > 0) {
+                    const texWidth = texture.width;
+                    const texHeight = texture.height;
+                    let texX = wallX;
                     if (wallSide === 0) {
-                        // Vertical wall (hit on X), use Y coordinate
-                        texX = wallX - Math.floor(wallX);
-                        // Flip if rayDirX > 0 (facing east)
                         if (rayDirX > 0) texX = 1 - texX;
                     } else {
-                        // Horizontal wall (hit on Y), use X coordinate
-                        texX = wallX - Math.floor(wallX);
-                        // Flip if rayDirY < 0 (facing north)
                         if (rayDirY < 0) texX = 1 - texX;
                     }
                     texX *= texWidth;
                     ctx.drawImage(
-                        wallTexture,
+                        texture,
                         Math.floor(texX), 0, 1, texHeight,
                         i, yTop, 1, wallHeight
                     );
@@ -285,7 +294,13 @@ function drawMap() {
     
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[y].length; x++) {
-            ctx.fillStyle = map[y][x] === 1 ? WALL_COLOR : FLOOR_COLOR;
+            if (map[y][x] === 1) {
+                ctx.fillStyle = WALL_COLOR;
+            } else if (map[y][x] === 2) {
+                ctx.fillStyle = DOOR_COLOR; // Or use a new color for building walls
+            } else {
+                ctx.fillStyle = FLOOR_COLOR;
+            }
             ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
         }
     }
@@ -341,8 +356,8 @@ function checkCollision(x, y) {
         if (mapX < 0 || mapX >= map[0].length || mapY < 0 || mapY >= map.length) {
             return true; // Out of bounds
         }
-        if (map[mapY][mapX] === 1) {
-            return true; // Wall collision
+        if (map[mapY][mapX] === 1 || map[mapY][mapX] === 2) {
+            return true; // Wall or building wall collision
         }
     }
     return false;
