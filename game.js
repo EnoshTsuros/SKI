@@ -96,9 +96,6 @@ const movementPhysics = {
     rotationSpeed: 0.02
 };
 
-// Track last turn direction for face animation
-let faceDirection = 'straight'; // 'left', 'right', 'straight'
-
 // Load wall texture
 const wallTexture = new Image();
 wallTexture.src = 'doom_wall.png';
@@ -106,6 +103,18 @@ wallTexture.src = 'doom_wall.png';
 // Load building wall texture
 const buildingWallTexture = new Image();
 buildingWallTexture.src = 'building_wall.png';
+
+// Load DOOM Guy face images
+const doomGuyFaces = [
+    new Image(), // 0: normal
+    new Image(), // 1: blink
+    new Image()  // 2: smile
+];
+doomGuyFaces[0].src = './doom_guy1.png';
+doomGuyFaces[1].src = './doom_guy_blinks.png';
+doomGuyFaces[2].src = './doom_guy_smile.png';
+let currentDoomGuyFace = 0;
+let nextDoomGuyFaceTime = 0;
 
 // Only start the game loop after the wall texture is loaded
 let textureLoaded = false;
@@ -404,12 +413,8 @@ function updatePlayer() {
     // Handle rotation
     if (movementState.left) {
         playerAngle -= movementPhysics.rotationSpeed;
-        faceDirection = 'left';
     } else if (movementState.right) {
         playerAngle += movementPhysics.rotationSpeed;
-        faceDirection = 'right';
-    } else {
-        faceDirection = 'straight';
     }
 
     // Handle movement speed
@@ -575,92 +580,12 @@ function drawStatusBar() {
     ctx.beginPath();
     ctx.rect(faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
     ctx.clip();
-    ctx.translate(canvas.width / 2, barY + barHeight / 2);
-    // Draw the detailed face (reuse previous code)
-    // Head (main skin)
-    ctx.beginPath();
-    ctx.arc(0, 0, 28, 0, Math.PI * 2);
-    ctx.fillStyle = '#fcd7b6';
-    ctx.fill();
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    // Cheek shadow
-    ctx.beginPath();
-    ctx.ellipse(10, 10, 10, 6, Math.PI / 6, 0, Math.PI * 2);
-    ctx.fillStyle = '#e0a97a';
-    ctx.globalAlpha = 0.4;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    // Jaw shadow
-    ctx.beginPath();
-    ctx.ellipse(0, 18, 16, 6, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#b97d4b';
-    ctx.globalAlpha = 0.3;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    // Eyebrows and eyes direction
-    let eyeOffsetX = 0;
-    let browOffsetX = 0;
-    if (faceDirection === 'left') {
-        eyeOffsetX = -3;
-        browOffsetX = -2;
-    } else if (faceDirection === 'right') {
-        eyeOffsetX = 3;
-        browOffsetX = 2;
+    // Draw DOOM Guy face image
+    const doomGuyFaceImg = new Image();
+    doomGuyFaceImg.src = './doom_guy1.png';
+    if (doomGuyFaceImg.complete && doomGuyFaceImg.naturalWidth > 0) {
+        ctx.drawImage(doomGuyFaceImg, faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
     }
-    // Eyebrows
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(-14 + browOffsetX, -13);
-    ctx.lineTo(-4 + browOffsetX, -16);
-    ctx.moveTo(14 + browOffsetX, -13);
-    ctx.lineTo(4 + browOffsetX, -16);
-    ctx.stroke();
-    // Eyes (white)
-    ctx.beginPath();
-    ctx.ellipse(-10 + eyeOffsetX, -6, 6, 4, 0, 0, Math.PI * 2);
-    ctx.ellipse(10 + eyeOffsetX, -6, 6, 4, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
-    // Pupils
-    ctx.beginPath();
-    ctx.arc(-10 + eyeOffsetX, -6, 2, 0, Math.PI * 2);
-    ctx.arc(10 + eyeOffsetX, -6, 2, 0, Math.PI * 2);
-    ctx.fillStyle = '#222';
-    ctx.fill();
-    // Nose
-    ctx.beginPath();
-    ctx.moveTo(0, -2);
-    ctx.lineTo(-2, 7);
-    ctx.lineTo(2, 7);
-    ctx.closePath();
-    ctx.fillStyle = '#e0a97a';
-    ctx.fill();
-    ctx.strokeStyle = '#a35a2c';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // Mouth (detailed)
-    ctx.beginPath();
-    ctx.moveTo(-8, 15);
-    ctx.quadraticCurveTo(0, 22, 8, 15);
-    ctx.quadraticCurveTo(0, 26, -8, 15);
-    ctx.closePath();
-    ctx.fillStyle = '#a35a2c';
-    ctx.globalAlpha = 0.7;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#6b2d12';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    // Teeth
-    ctx.beginPath();
-    ctx.moveTo(-5, 19);
-    ctx.lineTo(5, 19);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
     ctx.restore();
 
     // ARMOR (right-center)
