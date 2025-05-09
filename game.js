@@ -144,6 +144,9 @@ doomDoorTexture.src = 'doom_door.png';
 const magicWallTexture = new Image();
 magicWallTexture.src = 'magic_wall.png';
 
+// Door animation state
+const doorsAnimating = {};
+
 // Cast a single ray and return the distance and wall information
 function castRay(angle) {
     const rayDirX = Math.cos(angle);
@@ -255,6 +258,24 @@ function draw3DView() {
                 const shadowFactor = 1 - (shadowIntensity * WALL_SHADOW_FACTOR);
                 const yTop = (canvas.height - wallHeight) / 2;
                 let texture;
+                let collapse = 1;
+                let isAnimatingDoor = false;
+                if (wallType === 5) {
+                    const wx = Math.floor(playerX + Math.cos(currentAngle) * distance);
+                    const wy = Math.floor(playerY + Math.sin(currentAngle) * distance);
+                    const key = wx + ',' + wy;
+                    if (doorsAnimating[key]) {
+                        isAnimatingDoor = true;
+                        const state = doorsAnimating[key];
+                        if (state.phase === 'opening') {
+                            collapse = 1 - state.progress;
+                        } else if (state.phase === 'closing') {
+                            collapse = state.progress;
+                        } else if (state.phase === 'open') {
+                            continue; // Door is open, skip drawing
+                        }
+                    }
+                }
                 if (wallType === 2) {
                     texture = buildingWallTexture;
                 } else if (wallType === 3) {
@@ -278,17 +299,36 @@ function draw3DView() {
                         if (rayDirY < 0) texX = 1 - texX;
                     }
                     texX *= texWidth;
-                    ctx.drawImage(
-                        texture,
-                        Math.floor(texX), 0, 1, texHeight,
-                        i, yTop, 1, wallHeight
-                    );
-                    // Shadow overlay
-                    ctx.save();
-                    ctx.globalAlpha = 1 - shadowFactor;
-                    ctx.fillStyle = '#000';
-                    ctx.fillRect(i, yTop, 1, wallHeight);
-                    ctx.restore();
+                    // Apply collapse (shrink horizontally)
+                    if (isAnimatingDoor) {
+                        const center = i + 0.5;
+                        const half = (collapse * 0.5);
+                        const left = Math.floor(center - half);
+                        const right = Math.ceil(center + half);
+                        for (let x = left; x < right; x++) {
+                            ctx.drawImage(
+                                texture,
+                                Math.floor(texX), 0, 1, texHeight,
+                                x, yTop, 1, wallHeight
+                            );
+                            ctx.save();
+                            ctx.globalAlpha = 1 - shadowFactor;
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(x, yTop, 1, wallHeight);
+                            ctx.restore();
+                        }
+                    } else {
+                        ctx.drawImage(
+                            texture,
+                            Math.floor(texX), 0, 1, texHeight,
+                            i, yTop, 1, wallHeight
+                        );
+                        ctx.save();
+                        ctx.globalAlpha = 1 - shadowFactor;
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(i, yTop, 1, wallHeight);
+                        ctx.restore();
+                    }
                 }
             }
         }
@@ -550,11 +590,104 @@ function updateDoomGuyFaceAnim() {
     }
 }
 
+// Listen for 'e' key to start door animation
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'e') {
+        const px = Math.floor(playerX);
+        const py = Math.floor(playerY);
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const nx = px + dx;
+                const ny = py + dy;
+                if (map[ny] && map[ny][nx] === 5) {
+                    const key = nx + ',' + ny;
+                    if (!doorsAnimating[key]) {
+                        doorsAnimating[key] = {
+                            phase: 'opening',
+                            startTime: performance.now(),
+                            progress: 0
+                        };
+                    }
+                }
+            }
+        }
+    }
+});
+
+function updateDoorsAnimating() {
+    const now = performance.now();
+    for (const key in doorsAnimating) {
+        const [x, y] = key.split(',').map(Number);
+        const state = doorsAnimating[key];
+        if (state.phase === 'opening') {
+            state.progress = Math.min(1, (now - state.startTime) / 500);
+            if (state.progress >= 1) {
+                map[y][x] = 0;
+                state.phase = 'open';
+                state.startTime = now;
+            }
+        } else if (state.phase === 'open') {
+            if (now - state.startTime > 8000) {
+                map[y][x] = 5; // block for closing anim
+                state.phase = 'closing';
+                state.startTime = now;
+                state.progress = 0;
+            }
+        } else if (state.phase === 'closing') {
+            state.progress = Math.min(1, (now - state.startTime) / 500);
+            if (state.progress >= 1) {
+                delete doorsAnimating[key];
+            }
+        }
+    }
+}
+
+// Load and crop shootgun.png into 4 transparent images
+const shootgunSrc = 'shootgun.png';
+const shootgunImages = [];
+const shootgunImg = new Image();
+shootgunImg.src = shootgunSrc;
+shootgunImg.onload = () => {
+    const frameWidth = shootgunImg.width / 4;
+    const frameHeight = shootgunImg.height;
+    for (let i = 0; i < 4; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx2 = canvas.getContext('2d');
+        ctx2.drawImage(shootgunImg, i * frameWidth, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+        // Remove cyan background (0,255,255)
+        const imgData = ctx2.getImageData(0, 0, frameWidth, frameHeight);
+        for (let p = 0; p < imgData.data.length; p += 4) {
+            if (imgData.data[p] === 0 && imgData.data[p+1] === 255 && imgData.data[p+2] === 255) {
+                imgData.data[p+3] = 0;
+            }
+        }
+        ctx2.putImageData(imgData, 0, 0);
+        shootgunImages.push(canvas);
+        console.log('Loaded gun frame', i, canvas.width, canvas.height);
+    }
+};
+
+// Replace drawGun to use the first shootgun image
+function drawGun() {
+    const barHeight = 38;
+    const gunImg = shootgunImages[0];
+    if (gunImg) {
+        const gunWidth = gunImg.width;
+        const gunHeight = gunImg.height;
+        const gunX = canvas.width / 2 - gunWidth / 2;
+        const gunY = canvas.height - barHeight - gunHeight - 60;
+        ctx.drawImage(gunImg, gunX, gunY);
+    }
+}
+
 // Game loop
 function gameLoop() {
     updatePlayer();
     updateFireball();
     updateDoomGuyFaceAnim();
+    updateDoorsAnimating();
     draw();
     requestAnimationFrame(gameLoop);
 }
@@ -666,35 +799,6 @@ function drawStatusBar() {
     ctx.fillText('7', canvas.width - 95, boxY + 38);
     ctx.fillText('50', canvas.width - 95, boxY + 54);
     ctx.fillText('300', canvas.width - 95, boxY + 70);
-}
-
-// Draw a simple DOOM-style gun above the status bar and above the face
-function drawGun() {
-    const barHeight = 80;
-    const gunHeight = 60;
-    const gunWidth = 80;
-    const gunY = canvas.height - barHeight - gunHeight + 10;
-    const gunX = canvas.width / 2;
-    ctx.save();
-    ctx.translate(gunX, gunY);
-    // Draw gun body
-    ctx.fillStyle = '#444';
-    ctx.fillRect(-gunWidth / 2, 0, gunWidth, gunHeight - 10);
-    // Draw gun barrel
-    ctx.fillStyle = '#222';
-    ctx.fillRect(-12, -18, 24, 28);
-    // Draw gun highlight
-    ctx.fillStyle = '#888';
-    ctx.fillRect(-gunWidth / 4, 10, gunWidth / 2, 10);
-    // Draw trigger area
-    ctx.fillStyle = '#222';
-    ctx.fillRect(-8, gunHeight - 18, 16, 12);
-    // Draw muzzle
-    ctx.beginPath();
-    ctx.arc(0, -18, 10, 0, Math.PI * 2);
-    ctx.fillStyle = '#bbb';
-    ctx.fill();
-    ctx.restore();
 }
 
 // Main draw function
