@@ -720,7 +720,7 @@ function gameLoop() {
 
 // Draw the bottom status bar (DOOM-style)
 function drawStatusBar() {
-    const barHeight = 120;
+    const barHeight = 110;
     const barY = canvas.height - barHeight;
     // Draw metallic gray background
     ctx.fillStyle = '#000000';
@@ -751,7 +751,7 @@ function drawStatusBar() {
     ctx.fillStyle = '#222';
     ctx.fillRect(20, boxY, 70, boxHeight);
     ctx.fillStyle = '#f00';
-    ctx.fillText('45', 55, textYOffset - 10);
+    ctx.fillText(ammo.toString(), 55, textYOffset - 10);
     ctx.font = 'bold 16px monospace';
     ctx.fillStyle = '#fff';
     ctx.fillText('AMMO', 55, labelYOffset);
@@ -840,8 +840,122 @@ function draw() {
 let gunIsAnimating = false;
 let gunAnimTimeout = null;
 
+// Add ammo variable
+let ammo = 100;
+
+// Update drawStatusBar to show current ammo
+function drawStatusBar() {
+    const barHeight = 110;
+    const barY = canvas.height - barHeight;
+    // Draw metallic gray background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, barY, canvas.width, barHeight);
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(0, barY, canvas.width, barHeight);
+    // Top and bottom metallic lines
+    ctx.strokeStyle = '#bbb';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, barY + 2);
+    ctx.lineTo(canvas.width, barY + 2);
+    ctx.moveTo(0, barY + barHeight - 2);
+    ctx.lineTo(canvas.width, barY + barHeight - 2);
+    ctx.stroke();
+
+    // Centering helpers
+    const boxHeight = 60;
+    const boxY = barY + (barHeight - boxHeight) / 2;
+    const textYOffset = boxY + boxHeight / 2 + 12; // for main numbers
+    const labelYOffset = boxY + boxHeight - 6; // for labels
+
+    // Digital font style
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'center';
+    // AMMO (left)
+    ctx.fillStyle = '#222';
+    ctx.fillRect(20, boxY, 70, boxHeight);
+    ctx.fillStyle = '#f00';
+    ctx.fillText(ammo.toString(), 55, textYOffset - 10);
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('AMMO', 55, labelYOffset);
+
+    // HEALTH (left-center)
+    ctx.font = 'bold 36px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(120, boxY, 90, boxHeight);
+    ctx.fillStyle = '#f00';
+    ctx.fillText('100%', 165, textYOffset - 10);
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('HEALTH', 165, labelYOffset);
+
+    // ARMS (weapon slots, center)
+    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(230, boxY, 180, boxHeight);
+    ctx.fillStyle = '#fff';
+    for (let i = 1; i <= 6; i++) {
+        ctx.fillText(i, 250 + (i - 1) * 28, boxY + 28);
+    }
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText('ARMS', 320, labelYOffset);
+
+    // Face (center, in a square frame)
+    const faceBoxSize = 96;
+    const faceBoxX = canvas.width / 2 - faceBoxSize / 2;
+    const faceBoxY = barY + (barHeight - faceBoxSize) / 2;
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(faceBoxX, faceBoxY, faceBoxSize, faceBoxSize);
+    ctx.fillStyle = '#444';
+    ctx.fillRect(faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
+    ctx.clip();
+    // Draw animated DOOM Guy face
+    let faceImg = doomGuyFaceNormal;
+    if (doomGuyFaceState === 'blink') faceImg = doomGuyFaceBlink;
+    else if (doomGuyFaceState === 'smile') faceImg = doomGuyFaceSmile;
+    if (faceImg.complete && faceImg.naturalWidth > 0) {
+        ctx.drawImage(faceImg, faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
+    }
+    ctx.restore();
+
+    // ARMOR (right-center)
+    ctx.font = 'bold 36px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(canvas.width - 210, boxY, 90, boxHeight);
+    ctx.fillStyle = '#f00';
+    ctx.fillText('300', canvas.width - 165, textYOffset - 10);
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('ARMOR', canvas.width - 165, labelYOffset);
+
+    // Ammo types (right, yellow)
+    ctx.font = 'bold 18px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(canvas.width - 100, boxY, 80, boxHeight);
+    ctx.fillStyle = '#ff0';
+    ctx.textAlign = 'right';
+    ctx.fillText('BULL', canvas.width - 60, boxY + 22);
+    ctx.fillText('SHEL', canvas.width - 60, boxY + 38);
+    ctx.fillText('ROKT', canvas.width - 60, boxY + 54);
+    ctx.fillText('CELL', canvas.width - 60, boxY + 70);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.fillText('45', canvas.width - 95, boxY + 22);
+    ctx.fillText('7', canvas.width - 95, boxY + 38);
+    ctx.fillText('50', canvas.width - 95, boxY + 54);
+    ctx.fillText('300', canvas.width - 95, boxY + 70);
+}
+
+// Update fireGunAnimation to decrease ammo and prevent firing at 0
 function fireGunAnimation() {
-    if (gunIsAnimating) return; // Prevent overlapping animations
+    if (gunIsAnimating || ammo <= 0) return; // Prevent overlapping animations or firing with no ammo
+    ammo = Math.max(0, ammo - 1);
     gunIsAnimating = true;
     gunFrameIndex = 1;
     if (gunAnimTimeout) clearTimeout(gunAnimTimeout);
