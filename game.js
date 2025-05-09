@@ -104,17 +104,18 @@ wallTexture.src = 'doom_wall.png';
 const buildingWallTexture = new Image();
 buildingWallTexture.src = 'building_wall.png';
 
-// Load DOOM Guy face images
-const doomGuyFaces = [
-    new Image(), // 0: normal
-    new Image(), // 1: blink
-    new Image()  // 2: smile
-];
-doomGuyFaces[0].src = './doom_guy1.png';
-doomGuyFaces[1].src = './doom_guy_blinks.png';
-doomGuyFaces[2].src = './doom_guy_smile.png';
-let currentDoomGuyFace = 0;
-let nextDoomGuyFaceTime = 0;
+// Load DOOM Guy face images for animation
+const doomGuyFaceNormal = new Image();
+doomGuyFaceNormal.src = './doom_guy1.png';
+const doomGuyFaceBlink = new Image();
+doomGuyFaceBlink.src = './doom_guy_blinks.png';
+const doomGuyFaceSmile = new Image();
+doomGuyFaceSmile.src = './doom_guy_smile.png';
+
+let doomGuyFaceState = 'normal'; // 'normal', 'blink', 'smile'
+let doomGuyNextBlink = performance.now() + 2000 + Math.random() * 2000;
+let doomGuyNextSmile = performance.now() + 8000 + Math.random() * 8000;
+let doomGuyFaceTimeout = 0;
 
 // Only start the game loop after the wall texture is loaded
 let textureLoaded = false;
@@ -506,20 +507,41 @@ function drawFireball() {
     ctx.restore();
 }
 
+// Update DOOM Guy face animation
+function updateDoomGuyFaceAnim() {
+    const now = performance.now();
+    if (doomGuyFaceState === 'normal') {
+        if (now > doomGuyNextSmile) {
+            doomGuyFaceState = 'smile';
+            doomGuyFaceTimeout = now + 300; // smile for 300ms
+            doomGuyNextSmile = now + 8000 + Math.random() * 8000;
+        } else if (now > doomGuyNextBlink) {
+            doomGuyFaceState = 'blink';
+            doomGuyFaceTimeout = now + 120; // blink for 120ms
+            doomGuyNextBlink = now + 2000 + Math.random() * 2000;
+        }
+    } else if (doomGuyFaceState === 'blink' || doomGuyFaceState === 'smile') {
+        if (now > doomGuyFaceTimeout) {
+            doomGuyFaceState = 'normal';
+        }
+    }
+}
+
 // Game loop
 function gameLoop() {
     updatePlayer();
     updateFireball();
+    updateDoomGuyFaceAnim();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
 // Draw the bottom status bar (DOOM-style)
 function drawStatusBar() {
-    const barHeight = 80;
+    const barHeight = 120;
     const barY = canvas.height - barHeight;
     // Draw metallic gray background
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, barY, canvas.width, barHeight);
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 6;
@@ -568,9 +590,9 @@ function drawStatusBar() {
     ctx.fillText('ARMS', 320, barY + 70);
 
     // Face (center, in a square frame)
-    const faceBoxSize = 64;
+    const faceBoxSize = 96;
     const faceBoxX = canvas.width / 2 - faceBoxSize / 2;
-    const faceBoxY = barY + 8;
+    const faceBoxY = barY + (barHeight - faceBoxSize) / 2;
     ctx.strokeStyle = '#222';
     ctx.lineWidth = 4;
     ctx.strokeRect(faceBoxX, faceBoxY, faceBoxSize, faceBoxSize);
@@ -580,11 +602,12 @@ function drawStatusBar() {
     ctx.beginPath();
     ctx.rect(faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
     ctx.clip();
-    // Draw DOOM Guy face image
-    const doomGuyFaceImg = new Image();
-    doomGuyFaceImg.src = './doom_guy1.png';
-    if (doomGuyFaceImg.complete && doomGuyFaceImg.naturalWidth > 0) {
-        ctx.drawImage(doomGuyFaceImg, faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
+    // Draw animated DOOM Guy face
+    let faceImg = doomGuyFaceNormal;
+    if (doomGuyFaceState === 'blink') faceImg = doomGuyFaceBlink;
+    else if (doomGuyFaceState === 'smile') faceImg = doomGuyFaceSmile;
+    if (faceImg.complete && faceImg.naturalWidth > 0) {
+        ctx.drawImage(faceImg, faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
     }
     ctx.restore();
 
