@@ -538,10 +538,10 @@ function gameLoop() {
 
 // Draw the bottom status bar (DOOM-style)
 function drawStatusBar() {
-    const barHeight = 110;
+    const barHeight = 120;
     const barY = canvas.height - barHeight;
     // Draw metallic gray background
-    ctx.fillStyle = '#141414';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, barY, canvas.width, barHeight);
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 6;
@@ -556,38 +556,44 @@ function drawStatusBar() {
     ctx.lineTo(canvas.width, barY + barHeight - 2);
     ctx.stroke();
 
+    // Centering helpers
+    const boxHeight = 60;
+    const boxY = barY + (barHeight - boxHeight) / 2;
+    const textYOffset = boxY + boxHeight / 2 + 12; // for main numbers
+    const labelYOffset = boxY + boxHeight - 6; // for labels
+
     // Digital font style
     ctx.font = 'bold 36px monospace';
     ctx.textAlign = 'center';
     // AMMO (left)
     ctx.fillStyle = '#222';
-    ctx.fillRect(20, barY + 10, 70, 60);
+    ctx.fillRect(20, boxY, 70, boxHeight);
     ctx.fillStyle = '#f00';
-    ctx.fillText('45', 55, barY + 50);
+    ctx.fillText('45', 55, textYOffset - 10);
     ctx.font = 'bold 16px monospace';
     ctx.fillStyle = '#fff';
-    ctx.fillText('AMMO', 55, barY + 70);
+    ctx.fillText('AMMO', 55, labelYOffset);
 
     // HEALTH (left-center)
     ctx.font = 'bold 36px monospace';
     ctx.fillStyle = '#222';
-    ctx.fillRect(120, barY + 10, 90, 60);
+    ctx.fillRect(120, boxY, 90, boxHeight);
     ctx.fillStyle = '#f00';
-    ctx.fillText('100%', 165, barY + 50);
+    ctx.fillText('100%', 165, textYOffset - 10);
     ctx.font = 'bold 16px monospace';
     ctx.fillStyle = '#fff';
-    ctx.fillText('HEALTH', 165, barY + 70);
+    ctx.fillText('HEALTH', 165, labelYOffset);
 
     // ARMS (weapon slots, center)
     ctx.font = 'bold 20px monospace';
     ctx.fillStyle = '#222';
-    ctx.fillRect(230, barY + 10, 180, 60);
+    ctx.fillRect(230, boxY, 180, boxHeight);
     ctx.fillStyle = '#fff';
     for (let i = 1; i <= 6; i++) {
-        ctx.fillText(i, 250 + (i - 1) * 28, barY + 35);
+        ctx.fillText(i, 250 + (i - 1) * 28, boxY + 28);
     }
     ctx.font = 'bold 16px monospace';
-    ctx.fillText('ARMS', 320, barY + 70);
+    ctx.fillText('ARMS', 320, labelYOffset);
 
     // Face (center, in a square frame)
     const faceBoxSize = 96;
@@ -614,29 +620,29 @@ function drawStatusBar() {
     // ARMOR (right-center)
     ctx.font = 'bold 36px monospace';
     ctx.fillStyle = '#222';
-    ctx.fillRect(canvas.width - 210, barY + 10, 90, 60);
+    ctx.fillRect(canvas.width - 210, boxY, 90, boxHeight);
     ctx.fillStyle = '#f00';
-    ctx.fillText('300', canvas.width - 165, barY + 50);
+    ctx.fillText('300', canvas.width - 165, textYOffset - 10);
     ctx.font = 'bold 16px monospace';
     ctx.fillStyle = '#fff';
-    ctx.fillText('ARMOR', canvas.width - 165, barY + 70);
+    ctx.fillText('ARMOR', canvas.width - 165, labelYOffset);
 
     // Ammo types (right, yellow)
     ctx.font = 'bold 18px monospace';
     ctx.fillStyle = '#222';
-    ctx.fillRect(canvas.width - 100, barY + 10, 80, 60);
+    ctx.fillRect(canvas.width - 100, boxY, 80, boxHeight);
     ctx.fillStyle = '#ff0';
     ctx.textAlign = 'right';
-    ctx.fillText('BULL', canvas.width - 60, barY + 28);
-    ctx.fillText('SHEL', canvas.width - 60, barY + 44);
-    ctx.fillText('ROKT', canvas.width - 60, barY + 60);
-    ctx.fillText('CELL', canvas.width - 60, barY + 76);
+    ctx.fillText('BULL', canvas.width - 60, boxY + 22);
+    ctx.fillText('SHEL', canvas.width - 60, boxY + 38);
+    ctx.fillText('ROKT', canvas.width - 60, boxY + 54);
+    ctx.fillText('CELL', canvas.width - 60, boxY + 70);
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'left';
-    ctx.fillText('45', canvas.width - 95, barY + 28);
-    ctx.fillText('7', canvas.width - 95, barY + 44);
-    ctx.fillText('50', canvas.width - 95, barY + 60);
-    ctx.fillText('300', canvas.width - 95, barY + 76);
+    ctx.fillText('45', canvas.width - 95, boxY + 22);
+    ctx.fillText('7', canvas.width - 95, boxY + 38);
+    ctx.fillText('50', canvas.width - 95, boxY + 54);
+    ctx.fillText('300', canvas.width - 95, boxY + 70);
 }
 
 // Draw a simple DOOM-style gun above the status bar and above the face
