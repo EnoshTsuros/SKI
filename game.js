@@ -35,15 +35,15 @@ function findValidStartPosition(map) {
 const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 1],
+    [1, 0, 3, 6, 3, 4, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 4, 0, 0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 3, 0, 0, 4, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 4, 0, 0, 5, 0, 0, 0, 0, 2, 2, 0, 0, 1],
+    [1, 0, 3, 0, 0, 4, 0, 0, 0, 0, 3, 0, 0, 0, 1],
+    [1, 5, 4, 0, 0, 3, 0, 0, 0, 0, 6, 0, 0, 0, 1],
+    [1, 0, 0, 4, 3, 4, 0, 0, 0, 0, 3, 0, 0, 0, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 5, 3, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
@@ -102,7 +102,7 @@ wallTexture.src = 'doom_wall.png';
 
 // Load building wall texture
 const buildingWallTexture = new Image();
-buildingWallTexture.src = 'building_wall.png';
+buildingWallTexture.src = 'doom_wall4.png';
 
 // Load DOOM Guy face images for animation
 const doomGuyFaceNormal = new Image();
@@ -133,6 +133,16 @@ function drawLoading() {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
 }
+
+// Load additional wall textures
+const doomWall2Texture = new Image();
+doomWall2Texture.src = 'doom_wall2.png';
+const doomWall3Texture = new Image();
+doomWall3Texture.src = 'doom_wall3.png';
+const doomDoorTexture = new Image();
+doomDoorTexture.src = 'doom_door.png';
+const magicWallTexture = new Image();
+magicWallTexture.src = 'magic_wall.png';
 
 // Cast a single ray and return the distance and wall information
 function castRay(angle) {
@@ -181,8 +191,8 @@ function castRay(angle) {
             mapY += stepY;
             side = 1; // horizontal wall
         }
-        // Check if ray has hit a wall or building wall
-        if (map[mapY][mapX] === 1 || map[mapY][mapX] === 2) {
+        // Check if ray has hit any wall type
+        if ([1,2,3,4,5,6].includes(map[mapY][mapX])) {
             hit = true;
             wallType = map[mapY][mapX];
         }
@@ -217,12 +227,9 @@ function castRay(angle) {
 
 // Draw the 3D view using ray casting
 function draw3DView() {
-    // if (wallTexture.complete && wallTexture.naturalWidth > 0) {
-    //     ctx.drawImage(wallTexture, 0, 0, 128, 128); // Draw a 128x128 sample at the top-left
-    // }
     const rayAngle = playerAngle - FOV / 2;
     const angleStep = FOV / NUM_RAYS;
-    // Clear the canvas
+    // Draw ceiling with solid dark color
     ctx.fillStyle = '#141414';
     ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
     // Draw floor with simple distance-based shading
@@ -250,6 +257,14 @@ function draw3DView() {
                 let texture;
                 if (wallType === 2) {
                     texture = buildingWallTexture;
+                } else if (wallType === 3) {
+                    texture = doomWall2Texture;
+                } else if (wallType === 4) {
+                    texture = doomWall3Texture;
+                } else if (wallType === 5) {
+                    texture = doomDoorTexture;
+                } else if (wallType === 6) {
+                    texture = magicWallTexture;
                 } else {
                     texture = wallTexture;
                 }
@@ -307,7 +322,15 @@ function drawMap() {
             if (map[y][x] === 1) {
                 ctx.fillStyle = WALL_COLOR;
             } else if (map[y][x] === 2) {
-                ctx.fillStyle = DOOR_COLOR; // Or use a new color for building walls
+                ctx.fillStyle = DOOR_COLOR;
+            } else if (map[y][x] === 3) {
+                ctx.fillStyle = '#6e6e6e'; // Color for doom_wall2
+            } else if (map[y][x] === 4) {
+                ctx.fillStyle = '#3e3e7e'; // Color for doom_wall3
+            } else if (map[y][x] === 5) {
+                ctx.fillStyle = '#bbaa44'; // Color for doom_door
+            } else if (map[y][x] === 6) {
+                ctx.fillStyle = '#44bbaa'; // Color for magic_wall
             } else {
                 ctx.fillStyle = FLOOR_COLOR;
             }
@@ -366,8 +389,8 @@ function checkCollision(x, y) {
         if (mapX < 0 || mapX >= map[0].length || mapY < 0 || mapY >= map.length) {
             return true; // Out of bounds
         }
-        if (map[mapY][mapX] === 1 || map[mapY][mapX] === 2) {
-            return true; // Wall or building wall collision
+        if ([1,2,3,4,5,6].includes(map[mapY][mapX])) {
+            return true; // Any wall type collision
         }
     }
     return false;
