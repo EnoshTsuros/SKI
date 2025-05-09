@@ -1,0 +1,716 @@
+// Generate a random map with walls (1) and paths (0)
+function generateMap(width, height) {
+    const map = [];
+    // Create the map with random walls
+    for (let y = 0; y < height; y++) {
+        const row = [];
+        for (let x = 0; x < width; x++) {
+            // Keep the outer frame as walls
+            if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
+                row.push(1);
+            } else {
+                // 30% chance of wall, 70% chance of path
+                row.push(Math.random() < 0.3 ? 1 : 0);
+            }
+        }
+        map.push(row);
+    }
+    return map;
+}
+
+// Find a valid starting position (empty cell)
+function findValidStartPosition(map) {
+    const validPositions = [];
+    for (let y = 1; y < map.length - 1; y++) {
+        for (let x = 1; x < map[y].length - 1; x++) {
+            if (map[y][x] === 0) {
+                validPositions.push({ x, y });
+            }
+        }
+    }
+    return validPositions[Math.floor(Math.random() * validPositions.length)];
+}
+
+// Game map where 1 represents walls, 2 represents doors, and 0 represents walkable spaces
+const map = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+];
+
+// Canvas setup
+const canvas = document.getElementById('gameCanvas');
+canvas.width = 1600;  // Increased canvas width
+canvas.height = 1000; // Increased canvas height
+const ctx = canvas.getContext('2d');
+
+// Cell size for drawing
+const CELL_SIZE = Math.min(canvas.width / map[0].length, canvas.height / map.length);
+
+// Find a valid starting position for the player
+const startPosition = findValidStartPosition(map);
+let playerX = startPosition.x + 0.5; // Start at the center of the cell
+let playerY = startPosition.y + 0.5; // Start at the center of the cell
+let playerAngle = 0; // Player's viewing angle in radians
+
+// Colors
+const WALL_COLOR = '#4a4a4a'; // Base wall color (dark gray)
+const DOOR_COLOR = '#FFD700'; // Gold door color
+const FLOOR_COLOR = '#8B4513'; // Base floor color (brown)
+const WALL_SHADOW_FACTOR = 0.75; // Slightly increased shadow factor
+const MAX_SHADOW_DISTANCE = 10; // Increased shadow distance
+const PLAYER_COLOR = '#f00';
+const WALL_GRID_COLOR = '#3a3a3a'; // Darker color for wall grid
+
+// Ray casting settings
+const FOV = Math.PI / 3; // Field of view (60 degrees)
+const NUM_RAYS = canvas.width;
+const MAX_DEPTH = 12; // Increased view distance
+const MIN_DISTANCE = 0.1; // Minimum distance to render
+const RAY_STEP = 0.01; // Smaller step size for more precise ray casting
+
+// Movement state
+const movementState = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false
+};
+
+// Movement physics
+const movementPhysics = {
+    speed: 0,
+    maxSpeed: 0.02,
+    acceleration: 0.002,
+    deceleration: 0.002,
+    rotationSpeed: 0.02
+};
+
+// Track last turn direction for face animation
+let faceDirection = 'straight'; // 'left', 'right', 'straight'
+
+// Load wall texture
+const wallTexture = new Image();
+wallTexture.src = 'doom_wall.png';
+
+// Only start the game loop after the wall texture is loaded
+let textureLoaded = false;
+wallTexture.onload = () => {
+    textureLoaded = true;
+    gameLoop();
+};
+
+// Show loading message if texture not loaded
+function drawLoading() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = 'bold 48px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+}
+
+// Cast a single ray and return the distance and wall information
+function castRay(angle) {
+    const rayDirX = Math.cos(angle);
+    const rayDirY = Math.sin(angle);
+
+    let mapX = Math.floor(playerX);
+    let mapY = Math.floor(playerY);
+
+    // Length of ray from one x or y-side to next x or y-side
+    const deltaDistX = Math.abs(1 / rayDirX);
+    const deltaDistY = Math.abs(1 / rayDirY);
+
+    // Calculate step and initial sideDist
+    let stepX, stepY;
+    let sideDistX, sideDistY;
+
+    if (rayDirX < 0) {
+        stepX = -1;
+        sideDistX = (playerX - mapX) * deltaDistX;
+    } else {
+        stepX = 1;
+        sideDistX = (mapX + 1.0 - playerX) * deltaDistX;
+    }
+    if (rayDirY < 0) {
+        stepY = -1;
+        sideDistY = (playerY - mapY) * deltaDistY;
+    } else {
+        stepY = 1;
+        sideDistY = (mapY + 1.0 - playerY) * deltaDistY;
+    }
+
+    let hit = false;
+    let side; // 0 for vertical, 1 for horizontal
+    let perpWallDist;
+
+    while (!hit) {
+        // Jump to next map square, either in x-direction or y-direction
+        if (sideDistX < sideDistY) {
+            sideDistX += deltaDistX;
+            mapX += stepX;
+            side = 0; // vertical wall
+        } else {
+            sideDistY += deltaDistY;
+            mapY += stepY;
+            side = 1; // horizontal wall
+        }
+        // Check if ray has hit a wall
+        if (map[mapY][mapX] === 1) hit = true;
+    }
+
+    // Calculate distance to the point of impact
+    if (side === 0) {
+        perpWallDist = (mapX - playerX + (1 - stepX) / 2) / rayDirX;
+    } else {
+        perpWallDist = (mapY - playerY + (1 - stepY) / 2) / rayDirY;
+    }
+
+    // Calculate the exact position of the wall hit
+    let wallX;
+    if (side === 0) {
+        wallX = playerY + perpWallDist * rayDirY;
+    } else {
+        wallX = playerX + perpWallDist * rayDirX;
+    }
+    wallX -= Math.floor(wallX);
+
+    return {
+        distance: perpWallDist,
+        wallSide: side,
+        hitWall: true,
+        wallX: wallX,
+        rayDirX,
+        rayDirY
+    };
+}
+
+// Draw the 3D view using ray casting
+function draw3DView() {
+    // if (wallTexture.complete && wallTexture.naturalWidth > 0) {
+    //     ctx.drawImage(wallTexture, 0, 0, 128, 128); // Draw a 128x128 sample at the top-left
+    // }
+    const rayAngle = playerAngle - FOV / 2;
+    const angleStep = FOV / NUM_RAYS;
+    // Clear the canvas
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+    // Draw floor with simple distance-based shading
+    const floorHeight = canvas.height / 2;
+    const horizonY = floorHeight;
+    for (let y = 0; y < floorHeight; y++) {
+        const perspectiveFactor = y / floorHeight;
+        const distanceFactor = 1 - perspectiveFactor;
+        const shadowIntensity = Math.min(1, distanceFactor * 2);
+        const shadowFactor = 1 - (shadowIntensity * WALL_SHADOW_FACTOR);
+        const floorColor = applyShadow(FLOOR_COLOR, shadowFactor);
+        ctx.fillStyle = floorColor;
+        ctx.fillRect(0, horizonY + y, canvas.width, 1);
+    }
+    // Cast rays and draw walls
+    for (let i = 0; i < NUM_RAYS; i++) {
+        const currentAngle = rayAngle + i * angleStep;
+        const { distance, wallSide, hitWall, wallX, rayDirX, rayDirY } = castRay(currentAngle);
+        if (hitWall && distance < MAX_DEPTH) {
+            const wallHeight = (canvas.height / distance) * 0.5;
+            if (wallHeight >= 1) {
+                const shadowIntensity = Math.min(1, distance / MAX_SHADOW_DISTANCE);
+                const shadowFactor = 1 - (shadowIntensity * WALL_SHADOW_FACTOR);
+                const yTop = (canvas.height - wallHeight) / 2;
+                if (wallTexture.complete && wallTexture.naturalWidth > 0) {
+                    const texWidth = wallTexture.width;
+                    const texHeight = wallTexture.height;
+                    let texX;
+                    if (wallSide === 0) {
+                        // Vertical wall (hit on X), use Y coordinate
+                        texX = wallX - Math.floor(wallX);
+                        // Flip if rayDirX > 0 (facing east)
+                        if (rayDirX > 0) texX = 1 - texX;
+                    } else {
+                        // Horizontal wall (hit on Y), use X coordinate
+                        texX = wallX - Math.floor(wallX);
+                        // Flip if rayDirY < 0 (facing north)
+                        if (rayDirY < 0) texX = 1 - texX;
+                    }
+                    texX *= texWidth;
+                    ctx.drawImage(
+                        wallTexture,
+                        Math.floor(texX), 0, 1, texHeight,
+                        i, yTop, 1, wallHeight
+                    );
+                    // Shadow overlay
+                    ctx.save();
+                    ctx.globalAlpha = 1 - shadowFactor;
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(i, yTop, 1, wallHeight);
+                    ctx.restore();
+                }
+            }
+        }
+    }
+}
+
+// Helper function to apply shadow to a color
+function applyShadow(baseColor, shadowFactor) {
+    // Convert hex to RGB
+    const r = parseInt(baseColor.slice(1, 3), 16);
+    const g = parseInt(baseColor.slice(3, 5), 16);
+    const b = parseInt(baseColor.slice(5, 7), 16);
+    
+    // Apply shadow factor
+    const shadowedR = Math.floor(r * shadowFactor);
+    const shadowedG = Math.floor(g * shadowFactor);
+    const shadowedB = Math.floor(b * shadowFactor);
+    
+    // Convert back to hex
+    return `rgb(${shadowedR}, ${shadowedG}, ${shadowedB})`;
+}
+
+// Draw the map (top-down view)
+function drawMap() {
+    // Draw the map in the top-left corner
+    const mapSize = 150;
+    const cellSize = mapSize / Math.max(map.length, map[0].length);
+    
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+            ctx.fillStyle = map[y][x] === 1 ? WALL_COLOR : FLOOR_COLOR;
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+    }
+    
+    // Draw player on minimap
+    ctx.fillStyle = PLAYER_COLOR;
+    ctx.beginPath();
+    ctx.arc(
+        playerX * cellSize + cellSize / 2,
+        playerY * cellSize + cellSize / 2,
+        cellSize / 3,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
+    
+    // Draw player direction
+    ctx.strokeStyle = PLAYER_COLOR;
+    ctx.beginPath();
+    ctx.moveTo(playerX * cellSize + cellSize / 2, playerY * cellSize + cellSize / 2);
+    ctx.lineTo(
+        (playerX + Math.cos(playerAngle) * 2) * cellSize + cellSize / 2,
+        (playerY + Math.sin(playerAngle) * 2) * cellSize + cellSize / 2
+    );
+    ctx.stroke();
+}
+
+// Check if a position is valid (within bounds and not a wall)
+function isValidPosition(x, y) {
+    return (
+        x >= 0 &&
+        x < map[0].length &&
+        y >= 0 &&
+        y < map.length &&
+        map[y][x] === 0
+    );
+}
+
+// Check for collision with walls
+function checkCollision(x, y) {
+    // Player's radius (smaller than a cell)
+    const playerRadius = 0.2;
+    // Check the four corners of the player's hitbox
+    const corners = [
+        { x: x - playerRadius, y: y - playerRadius },
+        { x: x + playerRadius, y: y - playerRadius },
+        { x: x - playerRadius, y: y + playerRadius },
+        { x: x + playerRadius, y: y + playerRadius }
+    ];
+    for (const corner of corners) {
+        const mapX = Math.floor(corner.x);
+        const mapY = Math.floor(corner.y);
+        if (mapX < 0 || mapX >= map[0].length || mapY < 0 || mapY >= map.length) {
+            return true; // Out of bounds
+        }
+        if (map[mapY][mapX] === 1) {
+            return true; // Wall collision
+        }
+    }
+    return false;
+}
+
+// Handle key down events
+document.addEventListener('keydown', (event) => {
+    switch (event.key) {
+        case 'ArrowUp':
+            movementState.forward = true;
+            break;
+        case 'ArrowDown':
+            movementState.backward = true;
+            break;
+        case 'ArrowLeft':
+            movementState.left = true;
+            break;
+        case 'ArrowRight':
+            movementState.right = true;
+            break;
+    }
+});
+
+// Handle key up events
+document.addEventListener('keyup', (event) => {
+    switch (event.key) {
+        case 'ArrowUp':
+            movementState.forward = false;
+            break;
+        case 'ArrowDown':
+            movementState.backward = false;
+            break;
+        case 'ArrowLeft':
+            movementState.left = false;
+            break;
+        case 'ArrowRight':
+            movementState.right = false;
+            break;
+    }
+});
+
+// Update player position and rotation
+function updatePlayer() {
+    // Handle rotation
+    if (movementState.left) {
+        playerAngle -= movementPhysics.rotationSpeed;
+        faceDirection = 'left';
+    } else if (movementState.right) {
+        playerAngle += movementPhysics.rotationSpeed;
+        faceDirection = 'right';
+    } else {
+        faceDirection = 'straight';
+    }
+
+    // Handle movement speed
+    if (movementState.forward) {
+        movementPhysics.speed = Math.min(movementPhysics.speed + movementPhysics.acceleration, movementPhysics.maxSpeed);
+    } else if (movementState.backward) {
+        movementPhysics.speed = Math.max(movementPhysics.speed - movementPhysics.acceleration, -movementPhysics.maxSpeed);
+    } else {
+        // Decelerate when no movement keys are pressed
+        if (movementPhysics.speed > 0) {
+            movementPhysics.speed = Math.max(0, movementPhysics.speed - movementPhysics.deceleration);
+        } else if (movementPhysics.speed < 0) {
+            movementPhysics.speed = Math.min(0, movementPhysics.speed + movementPhysics.deceleration);
+        }
+    }
+
+    // Calculate new position
+    if (movementPhysics.speed !== 0) {
+        const newX = playerX + Math.cos(playerAngle) * movementPhysics.speed;
+        const newY = playerY + Math.sin(playerAngle) * movementPhysics.speed;
+
+        // Only update position if there's no collision
+        if (!checkCollision(newX, newY)) {
+            playerX = newX;
+            playerY = newY;
+        } else {
+            // Stop movement on collision
+            movementPhysics.speed = 0;
+        }
+    }
+}
+
+// Fireball state
+let fireball = null;
+
+// Listen for Ctrl key to shoot fireball
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !fireball) {
+        // Fireball starts at gun muzzle (bottom center)
+        const barHeight = 80;
+        const gunHeight = 60;
+        const startY = canvas.height - barHeight - gunHeight + 10 - 18; // gun muzzle Y
+        fireball = {
+            x: canvas.width / 2,
+            y: startY,
+            startY: startY,
+            endY: canvas.height / 2, // horizon
+            startRadius: 40,
+            endRadius: 8,
+            progress: 0 // 0=start, 1=end
+        };
+    }
+});
+
+// Animate fireball
+function updateFireball() {
+    if (fireball) {
+        fireball.progress += 0.04; // speed
+        if (fireball.progress >= 1) {
+            fireball = null;
+        }
+    }
+}
+
+// Draw fireball
+function drawFireball() {
+    if (!fireball) return;
+    // Interpolate position and size
+    const t = fireball.progress;
+    const y = fireball.startY + (fireball.endY - fireball.startY) * t;
+    const r = fireball.startRadius + (fireball.endRadius - fireball.startRadius) * t;
+    ctx.save();
+    ctx.globalAlpha = 1 - t * 0.7;
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(fireball.x, y, r * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 180, 0, 0.3)';
+    ctx.fill();
+    // Main fireball
+    ctx.beginPath();
+    ctx.arc(fireball.x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'orange';
+    ctx.fill();
+    // Core
+    ctx.beginPath();
+    ctx.arc(fireball.x, y, r * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'yellow';
+    ctx.fill();
+    ctx.restore();
+}
+
+// Game loop
+function gameLoop() {
+    updatePlayer();
+    updateFireball();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Draw the bottom status bar (DOOM-style)
+function drawStatusBar() {
+    const barHeight = 80;
+    const barY = canvas.height - barHeight;
+    // Draw metallic gray background
+    ctx.fillStyle = '#888';
+    ctx.fillRect(0, barY, canvas.width, barHeight);
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(0, barY, canvas.width, barHeight);
+    // Top and bottom metallic lines
+    ctx.strokeStyle = '#bbb';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, barY + 2);
+    ctx.lineTo(canvas.width, barY + 2);
+    ctx.moveTo(0, barY + barHeight - 2);
+    ctx.lineTo(canvas.width, barY + barHeight - 2);
+    ctx.stroke();
+
+    // Digital font style
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'center';
+    // AMMO (left)
+    ctx.fillStyle = '#222';
+    ctx.fillRect(20, barY + 10, 70, 60);
+    ctx.fillStyle = '#f00';
+    ctx.fillText('45', 55, barY + 50);
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('AMMO', 55, barY + 70);
+
+    // HEALTH (left-center)
+    ctx.font = 'bold 36px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(120, barY + 10, 90, 60);
+    ctx.fillStyle = '#f00';
+    ctx.fillText('100%', 165, barY + 50);
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('HEALTH', 165, barY + 70);
+
+    // ARMS (weapon slots, center)
+    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(230, barY + 10, 180, 60);
+    ctx.fillStyle = '#fff';
+    for (let i = 1; i <= 6; i++) {
+        ctx.fillText(i, 250 + (i - 1) * 28, barY + 35);
+    }
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText('ARMS', 320, barY + 70);
+
+    // Face (center, in a square frame)
+    const faceBoxSize = 64;
+    const faceBoxX = canvas.width / 2 - faceBoxSize / 2;
+    const faceBoxY = barY + 8;
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(faceBoxX, faceBoxY, faceBoxSize, faceBoxSize);
+    ctx.fillStyle = '#444';
+    ctx.fillRect(faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(faceBoxX + 2, faceBoxY + 2, faceBoxSize - 4, faceBoxSize - 4);
+    ctx.clip();
+    ctx.translate(canvas.width / 2, barY + barHeight / 2);
+    // Draw the detailed face (reuse previous code)
+    // Head (main skin)
+    ctx.beginPath();
+    ctx.arc(0, 0, 28, 0, Math.PI * 2);
+    ctx.fillStyle = '#fcd7b6';
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Cheek shadow
+    ctx.beginPath();
+    ctx.ellipse(10, 10, 10, 6, Math.PI / 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#e0a97a';
+    ctx.globalAlpha = 0.4;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    // Jaw shadow
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 16, 6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#b97d4b';
+    ctx.globalAlpha = 0.3;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    // Eyebrows and eyes direction
+    let eyeOffsetX = 0;
+    let browOffsetX = 0;
+    if (faceDirection === 'left') {
+        eyeOffsetX = -3;
+        browOffsetX = -2;
+    } else if (faceDirection === 'right') {
+        eyeOffsetX = 3;
+        browOffsetX = 2;
+    }
+    // Eyebrows
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-14 + browOffsetX, -13);
+    ctx.lineTo(-4 + browOffsetX, -16);
+    ctx.moveTo(14 + browOffsetX, -13);
+    ctx.lineTo(4 + browOffsetX, -16);
+    ctx.stroke();
+    // Eyes (white)
+    ctx.beginPath();
+    ctx.ellipse(-10 + eyeOffsetX, -6, 6, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(10 + eyeOffsetX, -6, 6, 4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    // Pupils
+    ctx.beginPath();
+    ctx.arc(-10 + eyeOffsetX, -6, 2, 0, Math.PI * 2);
+    ctx.arc(10 + eyeOffsetX, -6, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#222';
+    ctx.fill();
+    // Nose
+    ctx.beginPath();
+    ctx.moveTo(0, -2);
+    ctx.lineTo(-2, 7);
+    ctx.lineTo(2, 7);
+    ctx.closePath();
+    ctx.fillStyle = '#e0a97a';
+    ctx.fill();
+    ctx.strokeStyle = '#a35a2c';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Mouth (detailed)
+    ctx.beginPath();
+    ctx.moveTo(-8, 15);
+    ctx.quadraticCurveTo(0, 22, 8, 15);
+    ctx.quadraticCurveTo(0, 26, -8, 15);
+    ctx.closePath();
+    ctx.fillStyle = '#a35a2c';
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#6b2d12';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Teeth
+    ctx.beginPath();
+    ctx.moveTo(-5, 19);
+    ctx.lineTo(5, 19);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+
+    // ARMOR (right-center)
+    ctx.font = 'bold 36px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(canvas.width - 210, barY + 10, 90, 60);
+    ctx.fillStyle = '#f00';
+    ctx.fillText('300', canvas.width - 165, barY + 50);
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('ARMOR', canvas.width - 165, barY + 70);
+
+    // Ammo types (right, yellow)
+    ctx.font = 'bold 18px monospace';
+    ctx.fillStyle = '#222';
+    ctx.fillRect(canvas.width - 100, barY + 10, 80, 60);
+    ctx.fillStyle = '#ff0';
+    ctx.textAlign = 'right';
+    ctx.fillText('BULL', canvas.width - 60, barY + 28);
+    ctx.fillText('SHEL', canvas.width - 60, barY + 44);
+    ctx.fillText('ROKT', canvas.width - 60, barY + 60);
+    ctx.fillText('CELL', canvas.width - 60, barY + 76);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.fillText('45', canvas.width - 95, barY + 28);
+    ctx.fillText('7', canvas.width - 95, barY + 44);
+    ctx.fillText('50', canvas.width - 95, barY + 60);
+    ctx.fillText('300', canvas.width - 95, barY + 76);
+}
+
+// Draw a simple DOOM-style gun above the status bar and above the face
+function drawGun() {
+    const barHeight = 80;
+    const gunHeight = 60;
+    const gunWidth = 80;
+    const gunY = canvas.height - barHeight - gunHeight + 10;
+    const gunX = canvas.width / 2;
+    ctx.save();
+    ctx.translate(gunX, gunY);
+    // Draw gun body
+    ctx.fillStyle = '#444';
+    ctx.fillRect(-gunWidth / 2, 0, gunWidth, gunHeight - 10);
+    // Draw gun barrel
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-12, -18, 24, 28);
+    // Draw gun highlight
+    ctx.fillStyle = '#888';
+    ctx.fillRect(-gunWidth / 4, 10, gunWidth / 2, 10);
+    // Draw trigger area
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-8, gunHeight - 18, 16, 12);
+    // Draw muzzle
+    ctx.beginPath();
+    ctx.arc(0, -18, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#bbb';
+    ctx.fill();
+    ctx.restore();
+}
+
+// Main draw function
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    draw3DView();
+    drawMap();
+    drawGun();
+    drawFireball();
+    drawStatusBar();
+} 
