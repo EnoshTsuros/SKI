@@ -497,16 +497,21 @@ function updatePlayer() {
 
     // Calculate new position
     if (movementPhysics.speed !== 0) {
-        const newX = playerX + Math.cos(playerAngle) * movementPhysics.speed;
-        const newY = playerY + Math.sin(playerAngle) * movementPhysics.speed;
-
-        // Only update position if there's no collision
-        if (!checkCollision(newX, newY)) {
+        const moveX = Math.cos(playerAngle) * movementPhysics.speed;
+        const moveY = Math.sin(playerAngle) * movementPhysics.speed;
+        
+        // Try moving in X and Y separately
+        const newX = playerX + moveX;
+        const newY = playerY + moveY;
+        
+        // Check X movement
+        if (!checkCollision(newX, playerY)) {
             playerX = newX;
+        }
+        
+        // Check Y movement
+        if (!checkCollision(playerX, newY)) {
             playerY = newY;
-        } else {
-            // Stop movement on collision
-            movementPhysics.speed = 0;
         }
     }
 }
@@ -696,7 +701,7 @@ function gameLoop() {
 
 // Draw the bottom status bar (DOOM-style)
 function drawStatusBar() {
-    const barHeight = 110;
+    const barHeight = 120;
     const barY = canvas.height - barHeight;
     // Draw metallic gray background
     ctx.fillStyle = '#000000';
