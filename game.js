@@ -671,7 +671,7 @@ shootgunImg.onload = () => {
 
 // Replace drawGun to use the first shootgun image
 function drawGun() {
-    const barHeight = 38;
+    const barHeight = 28;
     const gunImg = shootgunImages[0];
     if (gunImg) {
         const gunWidth = gunImg.width;
@@ -694,7 +694,7 @@ function gameLoop() {
 
 // Draw the bottom status bar (DOOM-style)
 function drawStatusBar() {
-    const barHeight = 120;
+    const barHeight = 110;
     const barY = canvas.height - barHeight;
     // Draw metallic gray background
     ctx.fillStyle = '#000000';
