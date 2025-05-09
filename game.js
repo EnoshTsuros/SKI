@@ -223,7 +223,7 @@ function draw3DView() {
     const rayAngle = playerAngle - FOV / 2;
     const angleStep = FOV / NUM_RAYS;
     // Clear the canvas
-    ctx.fillStyle = '#87CEEB';
+    ctx.fillStyle = '#141414';
     ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
     // Draw floor with simple distance-based shading
     const floorHeight = canvas.height / 2;
