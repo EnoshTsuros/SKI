@@ -538,10 +538,10 @@ function gameLoop() {
 
 // Draw the bottom status bar (DOOM-style)
 function drawStatusBar() {
-    const barHeight = 120;
+    const barHeight = 110;
     const barY = canvas.height - barHeight;
     // Draw metallic gray background
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#141414';
     ctx.fillRect(0, barY, canvas.width, barHeight);
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 6;
