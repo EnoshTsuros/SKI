@@ -699,11 +699,12 @@ function drawGun() {
     const barHeight = 24;
     const gunImg = shootgunImages[gunFrameIndex];
     if (gunImg) {
-        const gunWidth = gunImg.width;
-        const gunHeight = gunImg.height;
+        const scale = 1.3;
+        const gunWidth = gunImg.width * scale;
+        const gunHeight = gunImg.height * scale;
         const gunX = canvas.width / 2 - gunWidth / 2;
         const gunY = canvas.height - barHeight - gunHeight - 60;
-        ctx.drawImage(gunImg, gunX, gunY);
+        ctx.drawImage(gunImg, gunX, gunY, gunWidth, gunHeight);
     }
 }
 
@@ -851,9 +852,9 @@ function fireGunAnimation() {
             gunAnimTimeout = setTimeout(() => {
                 gunFrameIndex = 0;
                 gunIsAnimating = false;
-            }, 40);
-        }, 80);
-    }, 300);
+            }, 150);
+        }, 150);
+    }, 150);
 }
 
 window.addEventListener('keydown', (e) => {
