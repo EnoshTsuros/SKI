@@ -481,11 +481,32 @@ function updatePlayer() {
         playerAngle += movementPhysics.rotationSpeed;
     }
 
+    // Check if player is close to a wall (within 0.3 units)
+    let nearWall = false;
+    const checkRadius = 0.3;
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = playerX + dx * checkRadius;
+            const ny = playerY + dy * checkRadius;
+            const mapX = Math.floor(nx);
+            const mapY = Math.floor(ny);
+            if (mapY >= 0 && mapY < map.length && mapX >= 0 && mapX < map[0].length) {
+                if ([1,2,3,4,5,6].includes(map[mapY][mapX])) {
+                    nearWall = true;
+                }
+            }
+        }
+    }
+
     // Handle movement speed
+    let speedModifier = 1;
+    if (nearWall) speedModifier = 0.4; // Move slower near walls
+
     if (movementState.forward) {
-        movementPhysics.speed = Math.min(movementPhysics.speed + movementPhysics.acceleration, movementPhysics.maxSpeed);
+        movementPhysics.speed = Math.min(movementPhysics.speed + movementPhysics.acceleration, movementPhysics.maxSpeed * speedModifier);
     } else if (movementState.backward) {
-        movementPhysics.speed = Math.max(movementPhysics.speed - movementPhysics.acceleration, -movementPhysics.maxSpeed);
+        movementPhysics.speed = Math.max(movementPhysics.speed - movementPhysics.acceleration, -movementPhysics.maxSpeed * speedModifier);
     } else {
         // Decelerate when no movement keys are pressed
         if (movementPhysics.speed > 0) {
@@ -497,16 +518,18 @@ function updatePlayer() {
 
     // Calculate new position
     if (movementPhysics.speed !== 0) {
-        const newX = playerX + Math.cos(playerAngle) * movementPhysics.speed;
-        const newY = playerY + Math.sin(playerAngle) * movementPhysics.speed;
-
-        // Only update position if there's no collision
-        if (!checkCollision(newX, newY)) {
+        const moveX = Math.cos(playerAngle) * movementPhysics.speed;
+        const moveY = Math.sin(playerAngle) * movementPhysics.speed;
+        
+        // Try moving in X and Y separately
+        const newX = playerX + moveX;
+        const newY = playerY + moveY;
+        
+        if (!checkCollision(newX, playerY)) {
             playerX = newX;
+        }
+        if (!checkCollision(playerX, newY)) {
             playerY = newY;
-        } else {
-            // Stop movement on collision
-            movementPhysics.speed = 0;
         }
     }
 }
@@ -673,7 +696,7 @@ let gunFrameIndex = 0;
 
 // Replace drawGun to use the first shootgun image
 function drawGun() {
-    const barHeight = 28;
+    const barHeight = 24;
     const gunImg = shootgunImages[gunFrameIndex];
     if (gunImg) {
         const gunWidth = gunImg.width;
@@ -813,14 +836,28 @@ function draw() {
     drawStatusBar();
 }
 
+let gunIsAnimating = false;
+let gunAnimTimeout = null;
+
+function fireGunAnimation() {
+    if (gunIsAnimating) return; // Prevent overlapping animations
+    gunIsAnimating = true;
+    gunFrameIndex = 1;
+    if (gunAnimTimeout) clearTimeout(gunAnimTimeout);
+    gunAnimTimeout = setTimeout(() => {
+        gunFrameIndex = 2;
+        gunAnimTimeout = setTimeout(() => {
+            gunFrameIndex = 3;
+            gunAnimTimeout = setTimeout(() => {
+                gunFrameIndex = 0;
+                gunIsAnimating = false;
+            }, 40);
+        }, 80);
+    }, 300);
+}
+
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
-        gunFrameIndex = 1;
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space') {
-        gunFrameIndex = 0;
+        fireGunAnimation();
     }
 }); 
