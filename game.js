@@ -967,8 +967,8 @@ function fireGunAnimation() {
                 gunFrameIndex = 0;
                 gunIsAnimating = false;
             }, 150);
-        }, 150);
-    }, 150);
+        }, 50);
+    }, 50);
 }
 
 window.addEventListener('keydown', (e) => {
