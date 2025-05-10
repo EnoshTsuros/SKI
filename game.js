@@ -539,7 +539,7 @@ let fireball = null;
 
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !fireball) {
+    if (e.code === 'Space' && !fireball && ammo !== 0) {
         // Fireball starts at gun muzzle (bottom center)
         const barHeight = 80;
         const gunHeight = 60;
