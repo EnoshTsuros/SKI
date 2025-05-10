@@ -372,6 +372,52 @@ function draw3DView() {
                 }
             }
         });
+
+    // --- Draw NPCs as sprites in 3D view ---
+    npcs
+        .map(n => {
+            const dx = n.x + 0.5 - playerX;
+            const dy = n.y + 0.5 - playerY;
+            return { ...n, dist: Math.sqrt(dx * dx + dy * dy), dx, dy };
+        })
+        .sort((a, b) => b.dist - a.dist)
+        .forEach(n => {
+            if (n.dist < 0.6) return;
+            const angleToNPC = Math.atan2(n.dy, n.dx);
+            let relAngle = angleToNPC - playerAngle;
+            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+            if (Math.abs(relAngle) < FOV / 2 && n.dist > 0.2) {
+                const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+                // Use a simple ray for occlusion
+                const rayDist = (() => {
+                    let d = 0, step = 0.01;
+                    let px = playerX, py = playerY;
+                    while (d < n.dist) {
+                        px += Math.cos(angleToNPC) * step;
+                        py += Math.sin(angleToNPC) * step;
+                        if (map[Math.floor(py)][Math.floor(px)] !== 0) break;
+                        d += step;
+                    }
+                    return d;
+                })();
+                if (rayDist + 0.2 < n.dist) return;
+                const spriteScale = 0.35;
+                const spriteHeight = Math.abs(canvas.height / n.dist * spriteScale);
+                const spriteWidth = spriteHeight * (npcImg.width / npcImg.height);
+                const floorLine = (canvas.height / 2) + (canvas.height / (2 * n.dist));
+                const spriteY = floorLine - spriteHeight;
+                if (npcImg.complete && npcImg.naturalWidth > 0) {
+                    ctx.drawImage(
+                        npcImg,
+                        screenX - spriteWidth / 2,
+                        spriteY,
+                        spriteWidth,
+                        spriteHeight
+                    );
+                }
+            }
+        });
 }
 
 // Helper function to apply shadow to a color
@@ -1084,3 +1130,38 @@ function collectBulletPickups() {
         }
     }
 }
+
+const npcImg = new Image();
+npcImg.src = 'niro_standing.png';
+
+const npcs = [];
+const maxNPCs = 15;
+
+function getEmptyCellsForNPC() {
+    const empty = [];
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+            if (
+                map[y][x] === 0 &&
+                !npcs.some(n => n.x === x && n.y === y) &&
+                !bulletPickups.some(b => b.x === x && b.y === y)
+            ) {
+                empty.push({x, y});
+            }
+        }
+    }
+    return empty;
+}
+
+function spawnNPC() {
+    if (npcs.length >= maxNPCs) return;
+    const emptyCells = getEmptyCellsForNPC();
+    if (emptyCells.length === 0) return;
+    const idx = Math.floor(Math.random() * emptyCells.length);
+    const pos = emptyCells[idx];
+    npcs.push({ x: pos.x, y: pos.y });
+}
+
+setInterval(() => {
+    spawnNPC();
+}, 1000);
