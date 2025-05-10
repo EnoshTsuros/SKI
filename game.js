@@ -333,6 +333,45 @@ function draw3DView() {
             }
         }
     }
+
+    // --- Draw bullet pickups as sprites in 3D view ---
+    bulletPickups
+        .map(b => {
+            const dx = b.x + 0.5 - playerX;
+            const dy = b.y + 0.5 - playerY;
+            return { ...b, dist: Math.sqrt(dx * dx + dy * dy), dx, dy };
+        })
+        .sort((a, b) => b.dist - a.dist) // farthest first
+        .forEach(b => {
+            if (b.dist < 0.6) return; // hide when stepping over
+            const angleToPickup = Math.atan2(b.dy, b.dx);
+            let relAngle = angleToPickup - playerAngle;
+            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+            if (Math.abs(relAngle) < FOV / 2 && b.dist > 0.2) {
+                const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+                const ray = castRay(angleToPickup);
+                if (ray.distance + 0.2 < b.dist) return; // occluded by wall
+
+                // --- TRUE FLOOR PROJECTION ---
+                const spriteScale = 0.25; // adjust for your sprite size
+                const spriteHeight = Math.abs(canvas.height / b.dist * spriteScale);
+                const spriteWidth = spriteHeight;
+                // Project the bottom of the sprite to the floor at this distance
+                const floorLine = (canvas.height / 2) + (canvas.height / (2 * b.dist));
+                const spriteY = floorLine - spriteHeight;
+
+                if (bulletPickupImg.complete && bulletPickupImg.naturalWidth > 0) {
+                    ctx.drawImage(
+                        bulletPickupImg,
+                        screenX - spriteWidth / 2,
+                        spriteY,
+                        spriteWidth,
+                        spriteHeight
+                    );
+                }
+            }
+        });
 }
 
 // Helper function to apply shadow to a color
@@ -356,7 +395,6 @@ function drawMap() {
     // Draw the map in the top-left corner
     const mapSize = 150;
     const cellSize = mapSize / Math.max(map.length, map[0].length);
-    
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[y].length; x++) {
             if (map[y][x] === 1) {
@@ -377,7 +415,23 @@ function drawMap() {
             ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
         }
     }
-    
+    // Draw bullet pickups as images if loaded, else yellow circle
+    bulletPickups.forEach(b => {
+        if (bulletPickupImg.complete && bulletPickupImg.naturalWidth > 0) {
+            ctx.drawImage(
+                bulletPickupImg,
+                b.x * cellSize + cellSize * 0.1,
+                b.y * cellSize + cellSize * 0.1,
+                cellSize * 0.8,
+                cellSize * 0.8
+            );
+        } else {
+            ctx.fillStyle = '#ff0';
+            ctx.beginPath();
+            ctx.arc(b.x * cellSize + cellSize / 2, b.y * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
     // Draw player on minimap
     ctx.fillStyle = PLAYER_COLOR;
     ctx.beginPath();
@@ -389,7 +443,6 @@ function drawMap() {
         Math.PI * 2
     );
     ctx.fill();
-    
     // Draw player direction
     ctx.strokeStyle = PLAYER_COLOR;
     ctx.beginPath();
@@ -534,12 +587,19 @@ function updatePlayer() {
     }
 }
 
+// Player state as an object
+const player = {
+    health: 100,
+    arms: 1,
+    ammo: 100
+};
+
 // Fireball state
 let fireball = null;
 
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !fireball && ammo !== 0) {
+    if (e.code === 'Space' && !fireball && player.ammo > 0) {
         // Fireball starts at gun muzzle (bottom center)
         const barHeight = 80;
         const gunHeight = 60;
@@ -751,7 +811,7 @@ function drawStatusBar() {
     ctx.fillStyle = '#222';
     ctx.fillRect(20, boxY, 70, boxHeight);
     ctx.fillStyle = '#f00';
-    ctx.fillText(ammo.toString(), 55, textYOffset - 10);
+    ctx.fillText(player.ammo.toString(), 55, textYOffset - 10);
     ctx.font = 'bold 16px monospace';
     ctx.fillStyle = '#fff';
     ctx.fillText('AMMO', 55, labelYOffset);
@@ -840,10 +900,7 @@ function draw() {
 let gunIsAnimating = false;
 let gunAnimTimeout = null;
 
-// Add ammo variable
-let ammo = 100;
-
-// Update drawStatusBar to show current ammo
+// Update drawStatusBar to use player.ammo
 function drawStatusBar() {
     const barHeight = 110;
     const barY = canvas.height - barHeight;
@@ -876,7 +933,7 @@ function drawStatusBar() {
     ctx.fillStyle = '#222';
     ctx.fillRect(20, boxY, 70, boxHeight);
     ctx.fillStyle = '#f00';
-    ctx.fillText(ammo.toString(), 55, textYOffset - 10);
+    ctx.fillText(player.ammo.toString(), 55, textYOffset - 10);
     ctx.font = 'bold 16px monospace';
     ctx.fillStyle = '#fff';
     ctx.fillText('AMMO', 55, labelYOffset);
@@ -954,8 +1011,8 @@ function drawStatusBar() {
 
 // Update fireGunAnimation to decrease ammo and prevent firing at 0
 function fireGunAnimation() {
-    if (gunIsAnimating || ammo <= 0) return; // Prevent overlapping animations or firing with no ammo
-    ammo = Math.max(0, ammo - 1);
+    if (gunIsAnimating || player.ammo <= 0) return; // Prevent overlapping animations or firing with no ammo
+    player.ammo = Math.max(0, player.ammo - 1);
     gunIsAnimating = true;
     gunFrameIndex = 1;
     if (gunAnimTimeout) clearTimeout(gunAnimTimeout);
@@ -975,4 +1032,38 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         fireGunAnimation();
     }
-}); 
+});
+
+// --- Bullet Pickup State ---
+const bulletPickups = [];
+const maxBulletPickups = 15;
+const bulletPickupImg = new Image();
+bulletPickupImg.src = 'shootgun_bullets.png';
+
+// Helper to get all empty cells
+function getEmptyCells() {
+    const empty = [];
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+            if (map[y][x] === 0 && !bulletPickups.some(b => b.x === x && b.y === y)) {
+                empty.push({x, y});
+            }
+        }
+    }
+    return empty;
+}
+
+// Spawn a bullet pickup at a random empty cell
+function spawnBulletPickup() {
+    if (bulletPickups.length >= maxBulletPickups) return;
+    const emptyCells = getEmptyCells();
+    if (emptyCells.length === 0) return;
+    const idx = Math.floor(Math.random() * emptyCells.length);
+    const pos = emptyCells[idx];
+    bulletPickups.push({ x: pos.x, y: pos.y });
+}
+
+// Start bullet pickup spawning interval
+setInterval(() => {
+    spawnBulletPickup();
+}, 1000); 
