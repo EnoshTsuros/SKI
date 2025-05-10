@@ -603,15 +603,15 @@ window.addEventListener('keydown', (e) => {
         // Fireball starts at gun muzzle (bottom center)
         const barHeight = 80;
         const gunHeight = 60;
-        const startY = canvas.height - barHeight - gunHeight + 10 - 18; // gun muzzle Y
+        const startY = canvas.height - barHeight - gunHeight + 10 - 60; // higher by 42px
         fireball = {
             x: canvas.width / 2,
             y: startY,
             startY: startY,
             endY: canvas.height / 2, // horizon
-            startRadius: 40,
-            endRadius: 8,
-            progress: 0 // 0=start, 1=end
+            startRadius: 18,   // was 40
+            endRadius: 5,      // was 8
+            progress: 0
         };
     }
 });
@@ -638,17 +638,17 @@ function drawFireball() {
     // Outer glow
     ctx.beginPath();
     ctx.arc(fireball.x, y, r * 1.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 180, 0, 0.3)';
+    ctx.fillStyle = 'rgba(255, 40, 0, 0.3)';
     ctx.fill();
     // Main fireball
     ctx.beginPath();
     ctx.arc(fireball.x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = 'orange';
+    ctx.fillStyle = 'red';
     ctx.fill();
     // Core
     ctx.beginPath();
     ctx.arc(fireball.x, y, r * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'yellow';
+    ctx.fillStyle = 'rgba(255, 100, 100, 1)';
     ctx.fill();
     ctx.restore();
 }
@@ -748,7 +748,6 @@ shootgunImg.onload = () => {
         }
         ctx2.putImageData(imgData, 0, 0);
         shootgunImages.push(canvas);
-        console.log('Loaded gun frame', i, canvas.width, canvas.height);
     }
 };
 
@@ -765,14 +764,6 @@ function drawGun() {
         const gunX = canvas.width / 2 - gunWidth / 2;
         const gunY = canvas.height - barHeight - gunHeight - 60;
         ctx.drawImage(gunImg, gunX, gunY, gunWidth, gunHeight);
-        if (fireVisible && fireImg.complete && fireImg.naturalWidth > 0) {
-            const fireScale = 1.2;
-            const fireWidth = fireImg.width * fireScale;
-            const fireHeight = fireImg.height * fireScale;
-            const fireX = canvas.width / 2 - fireWidth / 2;
-            const fireY = gunY - fireHeight + 20; // 20px adjustment for overlap
-            ctx.drawImage(fireImg, fireX, fireY, fireWidth, fireHeight);
-        }
     }
 }
 
@@ -1093,7 +1084,3 @@ function collectBulletPickups() {
         }
     }
 }
-
-const fireImg = new Image();
-fireImg.src = 'fire.png';
-let fireVisible = false; 
