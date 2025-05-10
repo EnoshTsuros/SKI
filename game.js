@@ -402,7 +402,7 @@ function draw3DView() {
                     return d;
                 })();
                 if (rayDist + 0.2 < n.dist) return;
-                const spriteScale = 0.35;
+                const spriteScale = 0.9;
                 const spriteHeight = Math.abs(canvas.height / n.dist * spriteScale);
                 const spriteWidth = spriteHeight * (npcImg.width / npcImg.height);
                 const floorLine = (canvas.height / 2) + (canvas.height / (2 * n.dist));
