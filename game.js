@@ -117,7 +117,7 @@ let doomGuyNextBlink = performance.now() + 2000 + Math.random() * 2000;
 let doomGuyNextSmile = performance.now() + 8000 + Math.random() * 8000;
 let doomGuyFaceTimeout = 0;
 
-// Only start the game loop after the wall texture is loaded
+// Only start the game loop after the wall texture is loadedo
 let textureLoaded = false;
 wallTexture.onload = () => {
     textureLoaded = true;
