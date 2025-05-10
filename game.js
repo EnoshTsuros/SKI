@@ -774,6 +774,7 @@ function gameLoop() {
     updateFireball();
     updateDoomGuyFaceAnim();
     updateDoorsAnimating();
+    collectBulletPickups();
     draw();
     requestAnimationFrame(gameLoop);
 }
@@ -1066,4 +1067,17 @@ function spawnBulletPickup() {
 // Start bullet pickup spawning interval
 setInterval(() => {
     spawnBulletPickup();
-}, 1000); 
+}, 1000);
+
+function collectBulletPickups() {
+    for (let i = bulletPickups.length - 1; i >= 0; i--) {
+        const b = bulletPickups[i];
+        const dx = (b.x + 0.5) - playerX;
+        const dy = (b.y + 0.5) - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.6) { // same threshold as hiding sprite
+            bulletPickups.splice(i, 1); // Remove the pickup
+            player.ammo += 5;           // Add 5 ammo
+        }
+    }
+} 
