@@ -765,6 +765,14 @@ function drawGun() {
         const gunX = canvas.width / 2 - gunWidth / 2;
         const gunY = canvas.height - barHeight - gunHeight - 60;
         ctx.drawImage(gunImg, gunX, gunY, gunWidth, gunHeight);
+        if (fireVisible && fireImg.complete && fireImg.naturalWidth > 0) {
+            const fireScale = 1.2;
+            const fireWidth = fireImg.width * fireScale;
+            const fireHeight = fireImg.height * fireScale;
+            const fireX = canvas.width / 2 - fireWidth / 2;
+            const fireY = gunY - fireHeight + 20; // 20px adjustment for overlap
+            ctx.drawImage(fireImg, fireX, fireY, fireWidth, fireHeight);
+        }
     }
 }
 
@@ -1032,6 +1040,10 @@ function fireGunAnimation() {
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         fireGunAnimation();
+        if (!fireVisible) {
+            fireVisible = true;
+            setTimeout(() => { fireVisible = false; }, 200);
+        }
     }
 });
 
@@ -1080,4 +1092,8 @@ function collectBulletPickups() {
             player.ammo += 5;           // Add 5 ammo
         }
     }
-} 
+}
+
+const fireImg = new Image();
+fireImg.src = 'fire.png';
+let fireVisible = false; 
