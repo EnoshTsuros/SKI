@@ -498,6 +498,27 @@ function drawMap() {
         (playerY + Math.sin(playerAngle) * 2) * cellSize + cellSize / 2
     );
     ctx.stroke();
+
+    // Draw NPCs as niro_standing.png if loaded, else red square
+    npcs.forEach(npc => {
+        if (npcImg && npcImg.complete && npcImg.naturalWidth > 0) {
+            ctx.drawImage(
+                npcImg,
+                npc.x * cellSize + cellSize * 0.1,
+                npc.y * cellSize + cellSize * 0.1,
+                cellSize * 0.8,
+                cellSize * 0.8
+            );
+        } else {
+            ctx.fillStyle = '#c00';
+            ctx.fillRect(
+                npc.x * cellSize + cellSize * 0.1,
+                npc.y * cellSize + cellSize * 0.1,
+                cellSize * 0.8,
+                cellSize * 0.8
+            );
+        }
+    });
 }
 
 // Check if a position is valid (within bounds and not a wall)
@@ -1159,7 +1180,7 @@ function spawnNPC() {
     if (emptyCells.length === 0) return;
     const idx = Math.floor(Math.random() * emptyCells.length);
     const pos = emptyCells[idx];
-    npcs.push({ x: pos.x, y: pos.y });
+    npcs.push({ x: pos.x, y: pos.y, health: 100, width: 1, height: 1 });
 }
 
 setInterval(() => {
