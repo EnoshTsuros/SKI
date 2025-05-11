@@ -1,3 +1,5 @@
+let fireVisible = false;
+
 // Generate a random map with walls (1) and paths (0)
 function generateMap(width, height) {
     const map = [];
@@ -387,7 +389,7 @@ function draw3DView() {
             let relAngle = angleToNPC - playerAngle;
             while (relAngle < -Math.PI) relAngle += Math.PI * 2;
             while (relAngle > Math.PI) relAngle -= Math.PI * 2;
-            if (Math.abs(relAngle) < FOV / 2 && n.dist > 0.2) {
+            if (Math.abs(relAngle) < (Math.PI / 180) * 10) { // ~10 degrees
                 const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
                 // Use a simple ray for occlusion
                 const rayDist = (() => {
@@ -680,6 +682,50 @@ window.addEventListener('keydown', (e) => {
             endRadius: 5,      // was 8
             progress: 0
         };
+
+        // --- NPC hit detection using raycast ---
+        // Cast a ray in the player's view direction
+        let closestNPC = null;
+        let closestDist = Infinity;
+        npcs.forEach(npc => {
+            // Project NPC position to player space
+            const dx = (npc.x + 0.5) - playerX;
+            const dy = (npc.y + 0.5) - playerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const angleToNPC = Math.atan2(dy, dx);
+            let relAngle = angleToNPC - playerAngle;
+            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+            // Consider only NPCs within a small angle threshold (center ray)
+            if (Math.abs(relAngle) < (Math.PI / 180) * 10) { // ~10 degrees
+                // Check if this NPC is the closest
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestNPC = npc;
+                }
+            }
+        });
+        if (closestNPC) {
+            closestNPC.health -= 25;
+            console.log('NPC hit:', {
+                x: closestNPC.x,
+                y: closestNPC.y,
+                width: closestNPC.width,
+                height: closestNPC.height,
+                health: closestNPC.health
+            });
+            if (closestNPC.health <= 0) {
+                const idx = npcs.indexOf(closestNPC);
+                if (idx !== -1) npcs.splice(idx, 1);
+            }
+        } else {
+            console.log('No NPC hit');
+        }
+
+        if (!fireVisible) {
+            fireVisible = true;
+            setTimeout(() => { fireVisible = false; }, 200);
+        }
     }
 });
 
@@ -1186,3 +1232,5 @@ function spawnNPC() {
 setInterval(() => {
     spawnNPC();
 }, 1000);
+
+npcs.push({ x: Math.floor(playerX), y: Math.floor(playerY) + 1, health: 100, width: 1, height: 1 });
