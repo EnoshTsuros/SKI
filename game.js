@@ -710,13 +710,6 @@ window.addEventListener('keydown', (e) => {
             closestNPC.health -= 25;
             closestNPC.state = 'injured';
             closestNPC.injuredUntil = Date.now() + 1000;
-            console.log('NPC hit:', {
-                x: closestNPC.x,
-                y: closestNPC.y,
-                width: closestNPC.width,
-                height: closestNPC.height,
-                health: closestNPC.health
-            });
             if (closestNPC.health <= 0) {
                 const idx = npcs.indexOf(closestNPC);
                 if (idx !== -1) npcs.splice(idx, 1);
@@ -1208,7 +1201,7 @@ const npcs = [];
 const maxNPCs = 15;
 
 const npcInjuredImg = new Image();
-npcInjuredImg.src = 'niro_injured.png';
+npcInjuredImg.src = 'niro_injured_t.png';
 
 function getEmptyCellsForNPC() {
     const empty = [];
