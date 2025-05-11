@@ -389,29 +389,24 @@ function draw3DView() {
             let relAngle = angleToNPC - playerAngle;
             while (relAngle < -Math.PI) relAngle += Math.PI * 2;
             while (relAngle > Math.PI) relAngle -= Math.PI * 2;
-            if (Math.abs(relAngle) < (Math.PI / 180) * 10) { // ~10 degrees
+            if (Math.abs(relAngle) < FOV / 2 && n.dist > 0.2) {
                 const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
-                // Use a simple ray for occlusion
-                const rayDist = (() => {
-                    let d = 0, step = 0.01;
-                    let px = playerX, py = playerY;
-                    while (d < n.dist) {
-                        px += Math.cos(angleToNPC) * step;
-                        py += Math.sin(angleToNPC) * step;
-                        if (map[Math.floor(py)][Math.floor(px)] !== 0) break;
-                        d += step;
-                    }
-                    return d;
-                })();
-                if (rayDist + 0.2 < n.dist) return;
+                const ray = castRay(angleToNPC);
+                if (ray.distance + 0.2 < n.dist) return;
                 const spriteScale = 0.9;
                 const spriteHeight = Math.abs(canvas.height / n.dist * spriteScale);
                 const spriteWidth = spriteHeight * (npcImg.width / npcImg.height);
                 const floorLine = (canvas.height / 2) + (canvas.height / (2 * n.dist));
                 const spriteY = floorLine - spriteHeight;
-                if (npcImg.complete && npcImg.naturalWidth > 0) {
+                let imgToDraw = npcImg;
+                if (n.state === 'injured' && Date.now() < n.injuredUntil) {
+                    imgToDraw = npcInjuredImg;
+                } else if (n.state === 'injured' && Date.now() >= n.injuredUntil) {
+                    n.state = 'standing';
+                }
+                if (imgToDraw.complete && imgToDraw.naturalWidth > 0) {
                     ctx.drawImage(
-                        npcImg,
+                        imgToDraw,
                         screenX - spriteWidth / 2,
                         spriteY,
                         spriteWidth,
@@ -503,9 +498,15 @@ function drawMap() {
 
     // Draw NPCs as niro_standing.png if loaded, else red square
     npcs.forEach(npc => {
-        if (npcImg && npcImg.complete && npcImg.naturalWidth > 0) {
+        let imgToDraw = npcImg;
+        if (npc.state === 'injured' && Date.now() < npc.injuredUntil) {
+            imgToDraw = npcInjuredImg;
+        } else if (npc.state === 'injured' && Date.now() >= npc.injuredUntil) {
+            npc.state = 'standing';
+        }
+        if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) {
             ctx.drawImage(
-                npcImg,
+                imgToDraw,
                 npc.x * cellSize + cellSize * 0.1,
                 npc.y * cellSize + cellSize * 0.1,
                 cellSize * 0.8,
@@ -707,6 +708,8 @@ window.addEventListener('keydown', (e) => {
         });
         if (closestNPC) {
             closestNPC.health -= 25;
+            closestNPC.state = 'injured';
+            closestNPC.injuredUntil = Date.now() + 1000;
             console.log('NPC hit:', {
                 x: closestNPC.x,
                 y: closestNPC.y,
@@ -1204,6 +1207,9 @@ npcImg.src = 'niro_standing.png';
 const npcs = [];
 const maxNPCs = 15;
 
+const npcInjuredImg = new Image();
+npcInjuredImg.src = 'niro_injured.png';
+
 function getEmptyCellsForNPC() {
     const empty = [];
     for (let y = 0; y < map.length; y++) {
@@ -1226,11 +1232,11 @@ function spawnNPC() {
     if (emptyCells.length === 0) return;
     const idx = Math.floor(Math.random() * emptyCells.length);
     const pos = emptyCells[idx];
-    npcs.push({ x: pos.x, y: pos.y, health: 100, width: 1, height: 1 });
+    npcs.push({ x: pos.x, y: pos.y, health: 100, width: 1, height: 1, state: 'standing', injuredUntil: 0 });
 }
 
 setInterval(() => {
     spawnNPC();
 }, 1000);
 
-npcs.push({ x: Math.floor(playerX), y: Math.floor(playerY) + 1, health: 100, width: 1, height: 1 });
+npcs.push({ x: Math.floor(playerX), y: Math.floor(playerY) + 1, health: 100, width: 1, height: 1, state: 'standing', injuredUntil: 0 });
