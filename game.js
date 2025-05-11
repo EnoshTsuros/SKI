@@ -1201,7 +1201,7 @@ const npcs = [];
 const maxNPCs = 15;
 
 const npcInjuredImg = new Image();
-npcInjuredImg.src = 'niro_injured_t.png';
+npcInjuredImg.src = 'niro_injured.png';
 
 function getEmptyCellsForNPC() {
     const empty = [];
