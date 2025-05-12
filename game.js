@@ -398,13 +398,9 @@ function draw3DView() {
                 const spriteWidth = spriteHeight * (npcImg.width / npcImg.height);
                 const floorLine = (canvas.height / 2) + (canvas.height / (2 * n.dist));
                 const spriteY = floorLine - spriteHeight;
-                let imgToDraw = npcImg;
-                if (n.state === 'injured' && Date.now() < n.injuredUntil) {
-                    imgToDraw = npcInjuredImg;
-                } else if (n.state === 'injured' && Date.now() >= n.injuredUntil) {
-                    n.state = 'standing';
-                }
-                if (imgToDraw.complete && imgToDraw.naturalWidth > 0) {
+                
+                const imgToDraw = getNPCSprite(n);
+                if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
                     ctx.drawImage(
                         imgToDraw,
                         screenX - spriteWidth / 2,
@@ -498,13 +494,8 @@ function drawMap() {
 
     // Draw NPCs as niro_standing.png if loaded, else red square
     npcs.forEach(npc => {
-        let imgToDraw = npcImg;
-        if (npc.state === 'injured' && Date.now() < npc.injuredUntil) {
-            imgToDraw = npcInjuredImg;
-        } else if (npc.state === 'injured' && Date.now() >= npc.injuredUntil) {
-            npc.state = 'standing';
-        }
-        if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) {
+        const imgToDraw = getNPCSprite(npc);
+        if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
             ctx.drawImage(
                 imgToDraw,
                 npc.x * cellSize + cellSize * 0.1,
@@ -882,6 +873,7 @@ function gameLoop() {
     updateFireball();
     updateDoomGuyFaceAnim();
     updateDoorsAnimating();
+    updateNPCs();
     collectBulletPickups();
     draw();
     requestAnimationFrame(gameLoop);
@@ -1203,6 +1195,7 @@ const maxNPCs = 15;
 const npcInjuredImg = new Image();
 npcInjuredImg.src = 'niro_injured.png';
 
+// Restore the getEmptyCellsForNPC function
 function getEmptyCellsForNPC() {
     const empty = [];
     for (let y = 0; y < map.length; y++) {
@@ -1219,17 +1212,222 @@ function getEmptyCellsForNPC() {
     return empty;
 }
 
+// Add sprite sheet loading and splitting
+const npcWalkingSpriteSheet = new Image();
+npcWalkingSpriteSheet.src = 'niro_walking_sprite_sheet.png';
+const npcWalkingImages = {
+    right: [],    // top row, all 4 frames
+    left: [],     // bottom row, first 3 frames
+    back: null    // bottom row, last frame
+};
+
+npcWalkingSpriteSheet.onload = () => {
+    const frameWidth = npcWalkingSpriteSheet.width / 4;
+    const frameHeight = npcWalkingSpriteSheet.height / 2;
+    
+    // Create temporary canvas for image processing
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = frameWidth;
+    canvas.height = frameHeight;
+    
+    // Split top row - walking right
+    for (let i = 0; i < 4; i++) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = frameWidth;
+        frameCanvas.height = frameHeight;
+        const frameCtx = frameCanvas.getContext('2d');
+        
+        // Draw the frame with proper cropping
+        frameCtx.drawImage(
+            npcWalkingSpriteSheet,
+            i * frameWidth, 0,           // Source x, y
+            frameWidth, frameHeight,     // Source width, height
+            0, 0,                        // Dest x, y
+            frameWidth, frameHeight      // Dest width, height
+        );
+        npcWalkingImages.right.push(frameCanvas);
+    }
+    
+    // Split bottom row - walking left (first 3 frames)
+    for (let i = 0; i < 3; i++) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = frameWidth;
+        frameCanvas.height = frameHeight;
+        const frameCtx = frameCanvas.getContext('2d');
+        
+        // Draw the frame with proper cropping
+        frameCtx.drawImage(
+            npcWalkingSpriteSheet,
+            i * frameWidth, frameHeight,  // Source x, y
+            frameWidth, frameHeight,      // Source width, height
+            0, 0,                         // Dest x, y
+            frameWidth, frameHeight       // Dest width, height
+        );
+        npcWalkingImages.left.push(frameCanvas);
+    }
+    
+    // Get the back walking frame (last frame, bottom row)
+    const backCanvas = document.createElement('canvas');
+    backCanvas.width = frameWidth;
+    backCanvas.height = frameHeight;
+    const backCtx = backCanvas.getContext('2d');
+    
+    // Draw the back frame with proper cropping
+    backCtx.drawImage(
+        npcWalkingSpriteSheet,
+        3 * frameWidth, frameHeight,      // Source x, y
+        frameWidth, frameHeight,          // Source width, height
+        0, 0,                             // Dest x, y
+        frameWidth, frameHeight           // Dest width, height
+    );
+    npcWalkingImages.back = backCanvas;
+};
+
 function spawnNPC() {
     if (npcs.length >= maxNPCs) return;
     const emptyCells = getEmptyCellsForNPC();
     if (emptyCells.length === 0) return;
     const idx = Math.floor(Math.random() * emptyCells.length);
     const pos = emptyCells[idx];
-    npcs.push({ x: pos.x, y: pos.y, health: 100, width: 1, height: 1, state: 'standing', injuredUntil: 0 });
+    npcs.push({ 
+        x: pos.x, 
+        y: pos.y, 
+        health: 100, 
+        width: 1, 
+        height: 1, 
+        state: 'standing', 
+        injuredUntil: 0,
+        moveDirection: Math.random() * Math.PI * 2,
+        moveTimer: 0,
+        moveSpeed: 0.004,
+        walkFrame: 0,              // Current frame in the walking animation
+        walkAnimTimer: 0,          // Timer for walking animation
+        lastX: pos.x,             // Previous X position to determine movement direction
+        lastY: pos.y              // Previous Y position to determine movement direction
+    });
 }
 
+// Update the initial NPC spawn to include animation properties
+npcs.push({ 
+    x: Math.floor(playerX), 
+    y: Math.floor(playerY) + 1, 
+    health: 100, 
+    width: 1, 
+    height: 1, 
+    state: 'standing', 
+    injuredUntil: 0,
+    moveDirection: Math.random() * Math.PI * 2,
+    moveTimer: 0,
+    moveSpeed: 0.004,
+    walkFrame: 0,
+    walkAnimTimer: 0,
+    lastX: Math.floor(playerX),
+    lastY: Math.floor(playerY) + 1
+});
+
+// Helper function to get the appropriate sprite for NPC movement
+function getNPCSprite(npc) {
+    if (npc.state === 'injured' && Date.now() < npc.injuredUntil) {
+        return npcInjuredImg;
+    }
+
+    // If sprite sheet hasn't loaded yet, use standing sprite
+    if (!npcWalkingImages.right.length) {
+        return npcImg;
+    }
+
+    // Calculate movement direction
+    const dx = npc.x - npc.lastX;
+    const dy = npc.y - npc.lastY;
+    
+    // If not moving significantly, use standing sprite
+    if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+        return npcImg;
+    }
+
+    // Determine movement direction and use appropriate animation frame
+    if (Math.abs(dx) > Math.abs(dy)) {
+        // Horizontal movement is dominant
+        if (dx > 0) {
+            return npcWalkingImages.right[npc.walkFrame % 4] || npcImg;
+        } else {
+            return npcWalkingImages.left[npc.walkFrame % 3] || npcImg;
+        }
+    } else {
+        // Vertical movement is dominant
+        if (dy < 0) {
+            return npcWalkingImages.back || npcImg;
+        } else {
+            // When moving down, use right-facing animation
+            return npcWalkingImages.right[npc.walkFrame % 4] || npcImg;
+        }
+    }
+}
+
+// Update the NPC movement function to handle animation
+function updateNPCs() {
+    npcs.forEach(npc => {
+        // Store current position for direction comparison
+        npc.lastX = npc.x;
+        npc.lastY = npc.y;
+
+        // Update movement timer and potentially change direction
+        npc.moveTimer++;
+        if (npc.moveTimer > 100) {
+            npc.moveDirection = Math.random() * Math.PI * 2;
+            npc.moveTimer = 0;
+        }
+
+        // Calculate potential new position
+        const newX = npc.x + Math.cos(npc.moveDirection) * npc.moveSpeed;
+        const newY = npc.y + Math.sin(npc.moveDirection) * npc.moveSpeed;
+
+        // Check for collisions with walls
+        const cellX = Math.floor(newX);
+        const cellY = Math.floor(newY);
+        if (map[cellY] && map[cellY][cellX] === 0) {
+            // Check for collisions with other NPCs
+            const hasNPCCollision = npcs.some(otherNpc => {
+                if (otherNpc === npc) return false;
+                const dx = Math.abs(newX - otherNpc.x);
+                const dy = Math.abs(newY - otherNpc.y);
+                return dx < 0.8 && dy < 0.8;
+            });
+
+            // Check for collision with player
+            const playerDx = Math.abs(newX - playerX);
+            const playerDy = Math.abs(newY - playerY);
+            const hasPlayerCollision = playerDx < 0.8 && playerDy < 0.8;
+
+            // Only move if there are no collisions
+            if (!hasNPCCollision && !hasPlayerCollision) {
+                npc.x = newX;
+                npc.y = newY;
+                
+                // Update walking animation
+                npc.walkAnimTimer++;
+                if (npc.walkAnimTimer > 10) { // Change frame every 10 game frames
+                    npc.walkFrame = (npc.walkFrame + 1) % 4;
+                    npc.walkAnimTimer = 0;
+                }
+            } else {
+                npc.moveDirection = Math.random() * Math.PI * 2;
+                npc.moveTimer = 0;
+            }
+        } else {
+            npc.moveDirection = Math.random() * Math.PI * 2;
+            npc.moveTimer = 0;
+        }
+    });
+}
+
+// Restore the NPC spawning interval
 setInterval(() => {
     spawnNPC();
 }, 1000);
 
-npcs.push({ x: Math.floor(playerX), y: Math.floor(playerY) + 1, health: 100, width: 1, height: 1, state: 'standing', injuredUntil: 0 });
+// Add error handling for sprite sheet loading
+npcWalkingSpriteSheet.onerror = () => {
+    console.error('Failed to load NPC walking sprite sheet');
+};
