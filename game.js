@@ -1324,7 +1324,29 @@ npcs.push({
 // Helper function to get the appropriate sprite for NPC movement
 function getNPCSprite(npc) {
     if (npc.state === 'injured' && Date.now() < npc.injuredUntil) {
-        return npcInjuredImg;
+        // Use injured walking frames if loaded, else fallback to static injured image
+        if (!npcInjuredWalkingImages.right.length) {
+            return npcInjuredImg;
+        }
+        // Use the same direction/frame logic as normal walking
+        const dx = npc.x - npc.lastX;
+        const dy = npc.y - npc.lastY;
+        if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+            return npcInjuredImg;
+        }
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0) {
+                return npcInjuredWalkingImages.right[npc.walkFrame % 4] || npcInjuredImg;
+            } else {
+                return npcInjuredWalkingImages.left[npc.walkFrame % 3] || npcInjuredImg;
+            }
+        } else {
+            if (dy < 0) {
+                return npcInjuredWalkingImages.back || npcInjuredImg;
+            } else {
+                return npcInjuredWalkingImages.right[npc.walkFrame % 4] || npcInjuredImg;
+            }
+        }
     }
 
     // If sprite sheet hasn't loaded yet, use standing sprite
@@ -1423,4 +1445,67 @@ setInterval(() => {
 // Add error handling for sprite sheet loading
 npcWalkingSpriteSheet.onerror = () => {
     console.error('Failed to load NPC walking sprite sheet');
+};
+
+const npcInjuredWalkingSpriteSheet = new Image();
+npcInjuredWalkingSpriteSheet.src = 'niros_injured.png';
+const npcInjuredWalkingImages = {
+    right: [],
+    left: [],
+    back: null
+};
+
+npcInjuredWalkingSpriteSheet.onload = () => {
+    const frameWidth = npcInjuredWalkingSpriteSheet.width / 4;
+    // Use the same crop values as for the normal walking sheet
+    const topRowY = 0;
+    const topRowHeight = 456;
+    const bottomRowY = 26;
+    const bottomRowHeight = 456;
+
+    // Top row - walking right
+    for (let i = 0; i < 4; i++) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = frameWidth;
+        frameCanvas.height = topRowHeight;
+        const frameCtx = frameCanvas.getContext('2d');
+        frameCtx.drawImage(
+            npcInjuredWalkingSpriteSheet,
+            i * frameWidth, topRowY,
+            frameWidth, topRowHeight,
+            0, 0,
+            frameWidth, topRowHeight
+        );
+        npcInjuredWalkingImages.right.push(frameCanvas);
+    }
+
+    // Bottom row - walking left (first 3 frames)
+    for (let i = 0; i < 3; i++) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = frameWidth;
+        frameCanvas.height = bottomRowHeight;
+        const frameCtx = frameCanvas.getContext('2d');
+        frameCtx.drawImage(
+            npcInjuredWalkingSpriteSheet,
+            i * frameWidth, bottomRowY,
+            frameWidth, bottomRowHeight,
+            0, 0,
+            frameWidth, bottomRowHeight
+        );
+        npcInjuredWalkingImages.left.push(frameCanvas);
+    }
+
+    // Back walking frame (last frame, bottom row)
+    const backCanvas = document.createElement('canvas');
+    backCanvas.width = frameWidth;
+    backCanvas.height = bottomRowHeight;
+    const backCtx = backCanvas.getContext('2d');
+    backCtx.drawImage(
+        npcInjuredWalkingSpriteSheet,
+        3 * frameWidth, bottomRowY,
+        frameWidth, bottomRowHeight,
+        0, 0,
+        frameWidth, bottomRowHeight
+    );
+    npcInjuredWalkingImages.back = backCanvas;
 };
