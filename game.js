@@ -393,7 +393,7 @@ function draw3DView() {
                 const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
                 const ray = castRay(angleToNPC);
                 if (ray.distance + 0.2 < n.dist) return;
-                const spriteScale = 0.9;
+                const spriteScale = 0.7;
                 const spriteHeight = Math.abs(canvas.height / n.dist * spriteScale);
                 const spriteWidth = spriteHeight * (npcImg.width / npcImg.height);
                 const floorLine = (canvas.height / 2) + (canvas.height / (2 * n.dist));
@@ -1293,7 +1293,7 @@ function spawnNPC() {
         injuredUntil: 0,
         moveDirection: Math.random() * Math.PI * 2,
         moveTimer: 0,
-        moveSpeed: 0.004,
+        moveSpeed: 0.002,
         walkFrame: 0,              // Current frame in the walking animation
         walkAnimTimer: 0,          // Timer for walking animation
         lastX: pos.x,             // Previous X position to determine movement direction
@@ -1312,7 +1312,7 @@ npcs.push({
     injuredUntil: 0,
     moveDirection: Math.random() * Math.PI * 2,
     moveTimer: 0,
-    moveSpeed: 0.004,
+    moveSpeed: 0.002,
     walkFrame: 0,
     walkAnimTimer: 0,
     lastX: Math.floor(playerX),
