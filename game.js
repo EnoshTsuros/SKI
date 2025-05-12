@@ -1223,63 +1223,56 @@ const npcWalkingImages = {
 
 npcWalkingSpriteSheet.onload = () => {
     const frameWidth = npcWalkingSpriteSheet.width / 4;
-    const frameHeight = npcWalkingSpriteSheet.height / 2;
-    
-    // Create temporary canvas for image processing
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = frameWidth;
-    canvas.height = frameHeight;
-    
-    // Split top row - walking right
+
+    // Manually set the y and height for each row
+    const topRowY = 0;
+    const topRowHeight = 456;
+    const bottomRowY = 26; // This is a bit lower than half the image
+    const bottomRowHeight = 456;
+
+    // Top row - walking right
     for (let i = 0; i < 4; i++) {
         const frameCanvas = document.createElement('canvas');
         frameCanvas.width = frameWidth;
-        frameCanvas.height = frameHeight;
+        frameCanvas.height = topRowHeight;
         const frameCtx = frameCanvas.getContext('2d');
-        
-        // Draw the frame with proper cropping
         frameCtx.drawImage(
             npcWalkingSpriteSheet,
-            i * frameWidth, 0,           // Source x, y
-            frameWidth, frameHeight,     // Source width, height
-            0, 0,                        // Dest x, y
-            frameWidth, frameHeight      // Dest width, height
+            i * frameWidth, topRowY,         // Source x, y
+            frameWidth, topRowHeight,        // Source width, height
+            0, 0,                            // Dest x, y
+            frameWidth, topRowHeight         // Dest width, height
         );
         npcWalkingImages.right.push(frameCanvas);
     }
-    
-    // Split bottom row - walking left (first 3 frames)
+
+    // Bottom row - walking left (first 3 frames)
     for (let i = 0; i < 3; i++) {
         const frameCanvas = document.createElement('canvas');
         frameCanvas.width = frameWidth;
-        frameCanvas.height = frameHeight;
+        frameCanvas.height = bottomRowHeight;
         const frameCtx = frameCanvas.getContext('2d');
-        
-        // Draw the frame with proper cropping
         frameCtx.drawImage(
             npcWalkingSpriteSheet,
-            i * frameWidth, frameHeight,  // Source x, y
-            frameWidth, frameHeight,      // Source width, height
-            0, 0,                         // Dest x, y
-            frameWidth, frameHeight       // Dest width, height
+            i * frameWidth, bottomRowY,      // Source x, y
+            frameWidth, bottomRowHeight,     // Source width, height
+            0, 0,                            // Dest x, y
+            frameWidth, bottomRowHeight      // Dest width, height
         );
         npcWalkingImages.left.push(frameCanvas);
     }
-    
-    // Get the back walking frame (last frame, bottom row)
+
+    // Back walking frame (last frame, bottom row)
     const backCanvas = document.createElement('canvas');
     backCanvas.width = frameWidth;
-    backCanvas.height = frameHeight;
+    backCanvas.height = bottomRowHeight;
     const backCtx = backCanvas.getContext('2d');
-    
-    // Draw the back frame with proper cropping
     backCtx.drawImage(
         npcWalkingSpriteSheet,
-        3 * frameWidth, frameHeight,      // Source x, y
-        frameWidth, frameHeight,          // Source width, height
-        0, 0,                             // Dest x, y
-        frameWidth, frameHeight           // Dest width, height
+        3 * frameWidth, bottomRowY,         // Source x, y
+        frameWidth, bottomRowHeight,        // Source width, height
+        0, 0,                               // Dest x, y
+        frameWidth, bottomRowHeight         // Dest width, height
     );
     npcWalkingImages.back = backCanvas;
 };
