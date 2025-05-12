@@ -1297,7 +1297,8 @@ function spawnNPC() {
         walkFrame: 0,              // Current frame in the walking animation
         walkAnimTimer: 0,          // Timer for walking animation
         lastX: pos.x,             // Previous X position to determine movement direction
-        lastY: pos.y              // Previous Y position to determine movement direction
+        lastY: pos.y,              // Previous Y position to determine movement direction
+        lastDirectionChange: Date.now()
     });
 }
 
@@ -1316,7 +1317,8 @@ npcs.push({
     walkFrame: 0,
     walkAnimTimer: 0,
     lastX: Math.floor(playerX),
-    lastY: Math.floor(playerY) + 1
+    lastY: Math.floor(playerY) + 1,
+    lastDirectionChange: Date.now()
 });
 
 // Helper function to get the appropriate sprite for NPC movement
@@ -1361,15 +1363,14 @@ function getNPCSprite(npc) {
 // Update the NPC movement function to handle animation
 function updateNPCs() {
     npcs.forEach(npc => {
-        // Store current position for direction comparison
         npc.lastX = npc.x;
         npc.lastY = npc.y;
 
-        // Update movement timer and potentially change direction
-        npc.moveTimer++;
-        if (npc.moveTimer > 100) {
+        // Change direction every 5000 ms
+        const now = Date.now();
+        if (now - npc.lastDirectionChange > 5000) {
             npc.moveDirection = Math.random() * Math.PI * 2;
-            npc.moveTimer = 0;
+            npc.lastDirectionChange = now;
         }
 
         // Calculate potential new position
@@ -1393,24 +1394,23 @@ function updateNPCs() {
             const playerDy = Math.abs(newY - playerY);
             const hasPlayerCollision = playerDx < 0.8 && playerDy < 0.8;
 
-            // Only move if there are no collisions
             if (!hasNPCCollision && !hasPlayerCollision) {
                 npc.x = newX;
                 npc.y = newY;
                 
                 // Update walking animation
                 npc.walkAnimTimer++;
-                if (npc.walkAnimTimer > 10) { // Change frame every 10 game frames
+                if (npc.walkAnimTimer > 10) {
                     npc.walkFrame = (npc.walkFrame + 1) % 4;
                     npc.walkAnimTimer = 0;
                 }
             } else {
+                // If blocked, pick a new direction immediately, but don't reset the timer
                 npc.moveDirection = Math.random() * Math.PI * 2;
-                npc.moveTimer = 0;
             }
         } else {
+            // If blocked by wall, pick a new direction immediately, but don't reset the timer
             npc.moveDirection = Math.random() * Math.PI * 2;
-            npc.moveTimer = 0;
         }
     });
 }
