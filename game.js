@@ -57,9 +57,6 @@ const map = [
         { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
     ],
     [
-        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
-    ],
-    [
         { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
     ],
     [
@@ -259,6 +256,7 @@ const cbCtx = checkerboardCanvas.getContext('2d');
     const floorY = -1; // Floor plane at y=-1
     const ceilingY = 1; // Ceiling plane at y=1
     const squareSize = 1.0; // World size of checker squares
+    
     // --- Floor ---
     for (let y = floorYStart + 1; y < canvas.height; y++) {
         for (let x = 0; x < canvas.width; x++) {
@@ -282,11 +280,49 @@ const cbCtx = checkerboardCanvas.getContext('2d');
                 const checkX = Math.floor(hitX / squareSize);
                 const checkZ = Math.floor(hitZ / squareSize);
                 const isBlack = (checkX + checkZ) % 2 === 0;
-                cbCtx.fillStyle = isBlack ? '#444' : '#eee';
+                
+                // Calculate distance-based darkening factor
+                const distance = Math.sqrt(hitX * hitX + hitZ * hitZ);
+                const distanceDarkening = Math.min(1, distance / 10);
+                
+                // Calculate center-based darkening factor
+                const distFromCenter = Math.abs(y - floorYStart) / (canvas.height / 2);
+                const centerDarkening = Math.pow(distFromCenter, 0.5); // Adjust power for effect intensity
+                
+                // Combine both darkening factors
+                const totalDarkening = Math.min(1, distanceDarkening + centerDarkening * 0.5);
+                
+                // Base colors
+                const color1 = '#382622';
+                const color2 = '#2b1b18';
+                
+                // Convert hex to RGB for darkening
+                const r1 = parseInt(color1.slice(1, 3), 16);
+                const g1 = parseInt(color1.slice(3, 5), 16);
+                const b1 = parseInt(color1.slice(5, 7), 16);
+                
+                const r2 = parseInt(color2.slice(1, 3), 16);
+                const g2 = parseInt(color2.slice(3, 5), 16);
+                const b2 = parseInt(color2.slice(5, 7), 16);
+                
+                // Apply darkening
+                const darkenedR1 = Math.floor(r1 * (1 - totalDarkening * 0.5));
+                const darkenedG1 = Math.floor(g1 * (1 - totalDarkening * 0.5));
+                const darkenedB1 = Math.floor(b1 * (1 - totalDarkening * 0.5));
+                
+                const darkenedR2 = Math.floor(r2 * (1 - totalDarkening * 0.5));
+                const darkenedG2 = Math.floor(g2 * (1 - totalDarkening * 0.5));
+                const darkenedB2 = Math.floor(b2 * (1 - totalDarkening * 0.5));
+                
+                // Set the color based on checkerboard pattern
+                cbCtx.fillStyle = isBlack ? 
+                    `rgb(${darkenedR1}, ${darkenedG1}, ${darkenedB1})` : 
+                    `rgb(${darkenedR2}, ${darkenedG2}, ${darkenedB2})`;
                 cbCtx.fillRect(x, y, 1, 1);
             }
         }
     }
+
     // --- Ceiling ---
     for (let y = 0; y <= floorYStart; y++) {
         for (let x = 0; x < canvas.width; x++) {
@@ -310,7 +346,44 @@ const cbCtx = checkerboardCanvas.getContext('2d');
                 const checkX = Math.floor(hitX / squareSize);
                 const checkZ = Math.floor(hitZ / squareSize);
                 const isBlack = (checkX + checkZ) % 2 === 0;
-                cbCtx.fillStyle = isBlack ? '#444' : '#eee';
+                
+                // Calculate distance-based darkening factor
+                const distance = Math.sqrt(hitX * hitX + hitZ * hitZ);
+                const distanceDarkening = Math.min(1, distance / 10);
+                
+                // Calculate center-based darkening factor
+                const distFromCenter = Math.abs(y - floorYStart) / (canvas.height / 2);
+                const centerDarkening = Math.pow(distFromCenter, 0.5); // Adjust power for effect intensity
+                
+                // Combine both darkening factors
+                const totalDarkening = Math.min(1, distanceDarkening + centerDarkening * 0.5);
+                
+                // Base colors
+                const color1 = '#1d1636';
+                const color2 = '#1c172b';
+                
+                // Convert hex to RGB for darkening
+                const r1 = parseInt(color1.slice(1, 3), 16);
+                const g1 = parseInt(color1.slice(3, 5), 16);
+                const b1 = parseInt(color1.slice(5, 7), 16);
+                
+                const r2 = parseInt(color2.slice(1, 3), 16);
+                const g2 = parseInt(color2.slice(3, 5), 16);
+                const b2 = parseInt(color2.slice(5, 7), 16);
+                
+                // Apply darkening
+                const darkenedR1 = Math.floor(r1 * (1 - totalDarkening * 0.5));
+                const darkenedG1 = Math.floor(g1 * (1 - totalDarkening * 0.5));
+                const darkenedB1 = Math.floor(b1 * (1 - totalDarkening * 0.5));
+                
+                const darkenedR2 = Math.floor(r2 * (1 - totalDarkening * 0.5));
+                const darkenedG2 = Math.floor(g2 * (1 - totalDarkening * 0.5));
+                const darkenedB2 = Math.floor(b2 * (1 - totalDarkening * 0.5));
+                
+                // Set the color based on checkerboard pattern
+                cbCtx.fillStyle = isBlack ? 
+                    `rgb(${darkenedR1}, ${darkenedG1}, ${darkenedB1})` : 
+                    `rgb(${darkenedR2}, ${darkenedG2}, ${darkenedB2})`;
                 cbCtx.fillRect(x, y, 1, 1);
             }
         }
