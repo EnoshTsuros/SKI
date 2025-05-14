@@ -406,13 +406,27 @@ function draw3DView() {
                 
                 const imgToDraw = getNPCSprite(n);
                 if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
-                    ctx.drawImage(
-                        imgToDraw,
-                        screenX - spriteWidth / 2,
-                        spriteY,
-                        spriteWidth,
-                        spriteHeight
-                    );
+                    ctx.save();
+                    if (n.isWalkingLeft) {
+                        ctx.translate(screenX + spriteWidth / 2, spriteY);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(
+                            imgToDraw,
+                            0,
+                            0,
+                            spriteWidth,
+                            spriteHeight
+                        );
+                    } else {
+                        ctx.drawImage(
+                            imgToDraw,
+                            screenX - spriteWidth / 2,
+                            spriteY,
+                            spriteWidth,
+                            spriteHeight
+                        );
+                    }
+                    ctx.restore();
                 }
             }
         });
@@ -1329,23 +1343,26 @@ npcs.push({
 // Helper function to get the appropriate sprite for NPC movement
 function getNPCSprite(npc) {
     if (npc.state === 'injured' && Date.now() < npc.injuredUntil) {
-        // Use injured walking frames if loaded, else fallback to static injured image
         if (!npcInjuredWalkingImages.right.length) {
+            npc.isWalkingLeft = false;
             return npcInjuredImg;
         }
-        // Use the same direction/frame logic as normal walking
         const dx = npc.x - npc.lastX;
         const dy = npc.y - npc.lastY;
         if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+            npc.isWalkingLeft = false;
             return npcInjuredImg;
         }
         if (Math.abs(dx) > Math.abs(dy)) {
             if (dx > 0) {
+                npc.isWalkingLeft = false;
                 return npcInjuredWalkingImages.right[npc.walkFrame % 4] || npcInjuredImg;
             } else {
+                npc.isWalkingLeft = true;
                 return npcInjuredWalkingImages.left[npc.walkFrame % 3] || npcInjuredImg;
             }
         } else {
+            npc.isWalkingLeft = false;
             if (dy < 0) {
                 return npcInjuredWalkingImages.back || npcInjuredImg;
             } else {
@@ -1356,32 +1373,29 @@ function getNPCSprite(npc) {
 
     // If sprite sheet hasn't loaded yet, use standing sprite
     if (!npcWalkingImages.right.length) {
+        npc.isWalkingLeft = false;
         return npcImg;
     }
 
-    // Calculate movement direction
     const dx = npc.x - npc.lastX;
     const dy = npc.y - npc.lastY;
-    
-    // If not moving significantly, use standing sprite
     if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+        npc.isWalkingLeft = false;
         return npcImg;
     }
-
-    // Determine movement direction and use appropriate animation frame
     if (Math.abs(dx) > Math.abs(dy)) {
-        // Horizontal movement is dominant
         if (dx > 0) {
+            npc.isWalkingLeft = false;
             return npcWalkingImages.right[npc.walkFrame % 4] || npcImg;
         } else {
+            npc.isWalkingLeft = true;
             return npcWalkingImages.left[npc.walkFrame % 3] || npcImg;
         }
     } else {
-        // Vertical movement is dominant
+        npc.isWalkingLeft = false;
         if (dy < 0) {
             return npcWalkingImages.back || npcImg;
         } else {
-            // When moving down, use right-facing animation
             return npcWalkingImages.right[npc.walkFrame % 4] || npcImg;
         }
     }
