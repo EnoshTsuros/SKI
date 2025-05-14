@@ -25,7 +25,7 @@ function findValidStartPosition(map) {
     const validPositions = [];
     for (let y = 1; y < map.length - 1; y++) {
         for (let x = 1; x < map[y].length - 1; x++) {
-            if (map[y][x].wall === 0) {
+            if (map[y][x] === 0) {
                 validPositions.push({ x, y });
             }
         }
@@ -35,33 +35,25 @@ function findValidStartPosition(map) {
 
 // New map structure: each cell is { wall: 0-6, depth: 0-6, open: true|false }
 const map = [
-    [
-        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }
-    ],
-    [
-        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }
-    ],
-    [
-        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }
-    ],
-    [
-        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
-    ],
-    [
-        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 5, depth: 0, open: false }, { wall: 5, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
-    ],
-    [
-        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 5, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
-    ],
-    [
-        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
-    ],
-    [
-        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
-    ],
-    [
-        { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }
-    ]
+    [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7],
+    [7, 7, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 7, 7, 7, 7],
+    [7, 7, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 7, 7, 7, 7],
+    [7, 7, 0, 1, 1, 0, 8, 8, 0, 1, 1, 0, 8, 0, 0, 7],
+    [7, 7, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 7, 7, 0, 7],
+    [7, 7, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 7, 7, 0, 7],
+    [7, 7, 7, 7, 5, 7, 7, 7, 7, 7, 5, 7, 7, 7, 0, 7],
+    [7, 4, 4, 4, 0, 4, 4, 3, 3, 3, 0, 3, 3, 7, 0, 7],
+    [7, 4, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 5, 0, 7],
+    [7, 4, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 3, 7, 0, 7],
+    [7, 4, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 3, 7, 0, 7],
+    [7, 4, 4, 4, 0, 4, 4, 3, 3, 3, 0, 3, 3, 7, 8, 7],
+    [7, 4, 0, 0, 0, 4, 4, 3, 6, 7, 0, 7, 7, 7, 0, 7],
+    [7, 4, 0, 0, 0, 4, 4, 3, 6, 7, 0, 7, 0, 0, 0, 7],
+    [7, 4, 0, 2, 0, 4, 4, 3, 6, 7, 0, 7, 0, 0, 7, 7],
+    [7, 4, 0, 2, 0, 4, 4, 3, 6, 7, 0, 7, 0, 0, 7, 7],
+    [7, 4, 0, 0, 0, 4, 4, 3, 6, 7, 0, 7, 7, 6, 7, 7],
+    [7, 4, 4, 4, 4, 4, 4, 3, 6, 7, 7, 7, 6, 6, 6, 7],
+    
 ];
 
 // Canvas setup
@@ -119,6 +111,12 @@ wallTexture.src = 'doom_wall.png';
 // Load building wall texture
 const buildingWallTexture = new Image();
 buildingWallTexture.src = 'doom_wall4.png';
+
+// Load new wall textures
+const wall1Texture = new Image();
+wall1Texture.src = 'wall_1.png';
+const door2Texture = new Image();
+door2Texture.src = 'door_2.png';
 
 // Load DOOM Guy face images for animation
 const doomGuyFaceNormal = new Image();
@@ -211,9 +209,9 @@ function castRay(angle) {
             side = 1; // horizontal wall
         }
         // Check if ray has hit any wall type
-        if ([1,2,3,4,5,6].includes(map[mapY][mapX].wall)) {
+        if (map[mapY][mapX] !== 0) {
             hit = true;
-            wallType = map[mapY][mapX].wall;
+            wallType = map[mapY][mapX];
         }
     }
 
@@ -441,6 +439,10 @@ function draw3DView() {
                     texture = doomDoorTexture;
                 } else if (wallType === 6) {
                     texture = magicWallTexture;
+                } else if (wallType === 7) {
+                    texture = wall1Texture;
+                } else if (wallType === 8) {
+                    texture = door2Texture;
                 } else {
                     texture = wallTexture;
                 }
@@ -603,22 +605,33 @@ function drawMap() {
     const cellSize = mapSize / Math.max(map.length, map[0].length);
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[y].length; x++) {
-            if (map[y][x].wall === 1) {
+            if (map[y][x] === 1) {
                 ctx.fillStyle = WALL_COLOR;
-            } else if (map[y][x].wall === 2) {
+            } else if (map[y][x] === 2) {
                 ctx.fillStyle = DOOR_COLOR;
-            } else if (map[y][x].wall === 3) {
+            } else if (map[y][x] === 3) {
                 ctx.fillStyle = '#6e6e6e'; // Color for doom_wall2
-            } else if (map[y][x].wall === 4) {
+            } else if (map[y][x] === 4) {
                 ctx.fillStyle = '#3e3e7e'; // Color for doom_wall3
-            } else if (map[y][x].wall === 5) {
+            } else if (map[y][x] === 5) {
                 ctx.fillStyle = '#bbaa44'; // Color for doom_door
-            } else if (map[y][x].wall === 6) {
+            } else if (map[y][x] === 6) {
                 ctx.fillStyle = '#44bbaa'; // Color for magic_wall
+            } else if (map[y][x] === 7) {
+                ctx.fillStyle = '#8B4513'; // Color for wall_1 (brown)
+            } else if (map[y][x] === 8) {
+                ctx.fillStyle = '#CD853F'; // Color for door_2 (light brown)
             } else {
                 ctx.fillStyle = FLOOR_COLOR;
             }
             ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            
+            // Add a border to make walls more visible
+            if (map[y][x] !== 0) {
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
         }
     }
     // Draw bullet pickups as images if loaded, else yellow circle
@@ -689,15 +702,13 @@ function isValidPosition(x, y) {
         x < map[0].length &&
         y >= 0 &&
         y < map.length &&
-        map[y][x].wall === 0
+        map[y][x] === 0
     );
 }
 
 // Check for collision with walls
 function checkCollision(x, y) {
-    // Player's radius (smaller than a cell)
     const playerRadius = 0.2;
-    // Check the four corners of the player's hitbox
     const corners = [
         { x: x - playerRadius, y: y - playerRadius },
         { x: x + playerRadius, y: y - playerRadius },
@@ -710,7 +721,7 @@ function checkCollision(x, y) {
         if (mapX < 0 || mapX >= map[0].length || mapY < 0 || mapY >= map.length) {
             return true; // Out of bounds
         }
-        if ([1,2,3,4,5,6].includes(map[mapY][mapX].wall)) {
+        if (map[mapY][mapX] !== 0) {
             return true; // Any wall type collision
         }
     }
@@ -773,7 +784,7 @@ function updatePlayer() {
             const mapX = Math.floor(nx);
             const mapY = Math.floor(ny);
             if (mapY >= 0 && mapY < map.length && mapX >= 0 && mapX < map[0].length) {
-                if ([1,2,3,4,5,6].includes(map[mapY][mapX].wall)) {
+                if (map[mapY][mapX] !== 0) {
                     nearWall = true;
                 }
             }
@@ -949,13 +960,14 @@ window.addEventListener('keydown', (e) => {
             for (let dx = -1; dx <= 1; dx++) {
                 const nx = px + dx;
                 const ny = py + dy;
-                if (map[ny] && map[ny][nx].wall === 5) {
+                if (map[ny] && (map[ny][nx] === 5 || map[ny][nx] === 8)) {
                     const key = nx + ',' + ny;
                     if (!doorsAnimating[key]) {
                         doorsAnimating[key] = {
                             phase: 'opening',
                             startTime: performance.now(),
-                            progress: 0
+                            progress: 0,
+                            doorType: map[ny][nx] // Store the original door type
                         };
                     }
                 }
@@ -972,13 +984,13 @@ function updateDoorsAnimating() {
         if (state.phase === 'opening') {
             state.progress = Math.min(1, (now - state.startTime) / 500);
             if (state.progress >= 1) {
-                map[y][x].wall = 0;
+                map[y][x] = 0;
                 state.phase = 'open';
                 state.startTime = now;
             }
         } else if (state.phase === 'open') {
             if (now - state.startTime > 8000) {
-                map[y][x].wall = 5; // block for closing anim
+                map[y][x] = state.doorType; // Restore the original door type
                 state.phase = 'closing';
                 state.startTime = now;
                 state.progress = 0;
@@ -1317,7 +1329,7 @@ function getEmptyCells() {
     const empty = [];
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[0].length; x++) {
-            if (map[y][x].wall === 0 && !bulletPickups.some(b => b.x === x && b.y === y)) {
+            if (map[y][x] === 0 && !bulletPickups.some(b => b.x === x && b.y === y)) {
                 empty.push({x, y});
             }
         }
@@ -1368,7 +1380,7 @@ function getEmptyCellsForNPC() {
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[0].length; x++) {
             if (
-                map[y][x].wall === 0 &&
+                map[y][x] === 0 &&
                 !npcs.some(n => n.x === x && n.y === y) &&
                 !bulletPickups.some(b => b.x === x && b.y === y)
             ) {
@@ -1569,7 +1581,7 @@ function updateNPCs() {
         // Check for collisions with walls
         const cellX = Math.floor(newX);
         const cellY = Math.floor(newY);
-        if (map[cellY] && map[cellY][cellX].wall === 0) {
+        if (map[cellY] && map[cellY][cellX] === 0) {
             // Check for collisions with other NPCs
             const hasNPCCollision = npcs.some(otherNpc => {
                 if (otherNpc === npc) return false;
@@ -1691,7 +1703,7 @@ function checkNPCCollision(x, y) {
         if (
             mapX < 0 || mapX >= map[0].length ||
             mapY < 0 || mapY >= map.length ||
-            map[mapY][mapX].wall !== 0
+            map[mapY][mapX] !== 0
         ) {
             return true; // Collides with wall or out of bounds
         }
