@@ -247,28 +247,42 @@ function castRay(angle) {
     };
 }
 
-// Draw the 3D view using ray casting
-function draw3DView() {
-    const rayAngle = playerAngle - FOV / 2;
-    const angleStep = FOV / NUM_RAYS;
-    // Draw ceiling with solid dark color
-    ctx.fillStyle = '#141414';
-    ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
-    // Draw floor with simple distance-based shading
-    const floorHeight = canvas.height / 2;
-    const horizonY = floorHeight;
-    for (let y = 0; y < floorHeight; y++) {
-        const perspectiveFactor = y / floorHeight;
-        const distanceFactor = 1 - perspectiveFactor;
-        const shadowIntensity = Math.min(1, distanceFactor * 2);
-        const shadowFactor = 1 - (shadowIntensity * WALL_SHADOW_FACTOR);
-        const floorColor = applyShadow(FLOOR_COLOR, shadowFactor);
-        ctx.fillStyle = floorColor;
-        ctx.fillRect(0, horizonY + y, canvas.width, 1);
+// --- Pre-render static perspective checkerboard floor ---
+const checkerboardCanvas = document.createElement('canvas');
+checkerboardCanvas.width = canvas.width;
+checkerboardCanvas.height = canvas.height;
+const cbCtx = checkerboardCanvas.getContext('2d');
+(function renderStaticCheckerboard() {
+    const floorYStart = Math.floor(canvas.height / 2);
+    const squareSize = 80; // Pixel size of squares at the bottom
+    for (let y = floorYStart + 1; y < canvas.height; y++) {
+        const scale = (canvas.height - y) / (canvas.height / 2);
+        const rowSquareSize = squareSize * scale;
+        for (let x = 0; x < canvas.width; x++) {
+            const col = Math.floor(x / rowSquareSize);
+            const row = Math.floor((y - floorYStart) / rowSquareSize);
+            const isBlack = (col + row) % 2 === 0;
+            cbCtx.fillStyle = isBlack ? '#222' : '#eee';
+            cbCtx.fillRect(x, y, 1, 1);
+        }
     }
+})();
+
+function draw3DView() {
+    // Draw ceiling with solid color
+    ctx.fillStyle = '#ccefff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+    // Draw static checkerboard floor
+    ctx.drawImage(checkerboardCanvas, 0, 0);
+    // Draw horizon line (front wall)
+    ctx.strokeStyle = '#222';
+    ctx.beginPath();
+    ctx.moveTo(0, Math.floor(canvas.height / 2));
+    ctx.lineTo(canvas.width, Math.floor(canvas.height / 2));
+    ctx.stroke();
     // Cast rays and draw walls
     for (let i = 0; i < NUM_RAYS; i++) {
-        const currentAngle = rayAngle + i * angleStep;
+        const currentAngle = playerAngle - FOV / 2 + i * (FOV / NUM_RAYS);
         const { distance, wallSide, hitWall, wallX, rayDirX, rayDirY, wallType } = castRay(currentAngle);
         if (hitWall && distance < MAX_DEPTH) {
             const wallHeight = (canvas.height / distance) * 0.5;
