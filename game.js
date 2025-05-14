@@ -25,7 +25,7 @@ function findValidStartPosition(map) {
     const validPositions = [];
     for (let y = 1; y < map.length - 1; y++) {
         for (let x = 1; x < map[y].length - 1; x++) {
-            if (map[y][x] === 0) {
+            if (map[y][x].wall === 0) {
                 validPositions.push({ x, y });
             }
         }
@@ -33,26 +33,38 @@ function findValidStartPosition(map) {
     return validPositions[Math.floor(Math.random() * validPositions.length)];
 }
 
-// Game map where 1 represents walls, 2 represents doors, and 0 represents walkable spaces
+// New map structure: each cell is { wall: 0-6, depth: 0-6, open: true|false }
 const map = [
-    [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    [3, 3, 3, 3, 3, 3, 0, 0, 3, 3, 3, 3, 3, 3, 3],
-    [3, 3, 3, 3, 3, 3, 0 ,0 ,3 ,3, 3, 3, 3, 3, 3],
-    [3, 3, 3, 0, 5, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3],
-    [3, 3, 3, 0, 3, 0, 0, 0, 0, 0, 5, 3, 3, 3, 3],
-    [3, 3, 3, 5, 3, 3, 0, 0, 3, 3, 0, 2, 2, 2, 2],
-    [3, 0, 0, 0, 5, 0, 3, 3, 0, 0, 0, 0, 0, 0, 2],
-    [3, 3, 3, 3, 3, 0, 3, 0, 0, 0, 6, 0, 0, 0, 2],
-    [4, 0, 4, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 2],
-    [4, 0, 4, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 2],
-    [4, 0, 5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 2],
-    [4, 0, 4, 0, 0, 0, 4, 0, 0, 0, 6, 0, 0, 0, 2],
-    [4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 5, 2, 2, 2],
-    [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-    [3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2],
-    [3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2],
-    [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-    [3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+    [
+        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }
+    ],
+    [
+        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }
+    ],
+    [
+        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }
+    ],
+    [
+        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 1, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
+    ],
+    [
+        { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 5, depth: 0, open: false }, { wall: 5, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 3, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
+    ],
+    [
+        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 5, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
+    ],
+    [
+        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
+    ],
+    [
+        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
+    ],
+    [
+        { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 0, depth: 0, open: false }, { wall: 2, depth: 0, open: false }
+    ],
+    [
+        { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 4, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }, { wall: 6, depth: 0, open: false }
+    ]
 ];
 
 // Canvas setup
@@ -202,9 +214,9 @@ function castRay(angle) {
             side = 1; // horizontal wall
         }
         // Check if ray has hit any wall type
-        if ([1,2,3,4,5,6].includes(map[mapY][mapX])) {
+        if ([1,2,3,4,5,6].includes(map[mapY][mapX].wall)) {
             hit = true;
-            wallType = map[mapY][mapX];
+            wallType = map[mapY][mapX].wall;
         }
     }
 
@@ -455,17 +467,17 @@ function drawMap() {
     const cellSize = mapSize / Math.max(map.length, map[0].length);
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[y].length; x++) {
-            if (map[y][x] === 1) {
+            if (map[y][x].wall === 1) {
                 ctx.fillStyle = WALL_COLOR;
-            } else if (map[y][x] === 2) {
+            } else if (map[y][x].wall === 2) {
                 ctx.fillStyle = DOOR_COLOR;
-            } else if (map[y][x] === 3) {
+            } else if (map[y][x].wall === 3) {
                 ctx.fillStyle = '#6e6e6e'; // Color for doom_wall2
-            } else if (map[y][x] === 4) {
+            } else if (map[y][x].wall === 4) {
                 ctx.fillStyle = '#3e3e7e'; // Color for doom_wall3
-            } else if (map[y][x] === 5) {
+            } else if (map[y][x].wall === 5) {
                 ctx.fillStyle = '#bbaa44'; // Color for doom_door
-            } else if (map[y][x] === 6) {
+            } else if (map[y][x].wall === 6) {
                 ctx.fillStyle = '#44bbaa'; // Color for magic_wall
             } else {
                 ctx.fillStyle = FLOOR_COLOR;
@@ -541,7 +553,7 @@ function isValidPosition(x, y) {
         x < map[0].length &&
         y >= 0 &&
         y < map.length &&
-        map[y][x] === 0
+        map[y][x].wall === 0
     );
 }
 
@@ -562,7 +574,7 @@ function checkCollision(x, y) {
         if (mapX < 0 || mapX >= map[0].length || mapY < 0 || mapY >= map.length) {
             return true; // Out of bounds
         }
-        if ([1,2,3,4,5,6].includes(map[mapY][mapX])) {
+        if ([1,2,3,4,5,6].includes(map[mapY][mapX].wall)) {
             return true; // Any wall type collision
         }
     }
@@ -625,7 +637,7 @@ function updatePlayer() {
             const mapX = Math.floor(nx);
             const mapY = Math.floor(ny);
             if (mapY >= 0 && mapY < map.length && mapX >= 0 && mapX < map[0].length) {
-                if ([1,2,3,4,5,6].includes(map[mapY][mapX])) {
+                if ([1,2,3,4,5,6].includes(map[mapY][mapX].wall)) {
                     nearWall = true;
                 }
             }
@@ -801,7 +813,7 @@ window.addEventListener('keydown', (e) => {
             for (let dx = -1; dx <= 1; dx++) {
                 const nx = px + dx;
                 const ny = py + dy;
-                if (map[ny] && map[ny][nx] === 5) {
+                if (map[ny] && map[ny][nx].wall === 5) {
                     const key = nx + ',' + ny;
                     if (!doorsAnimating[key]) {
                         doorsAnimating[key] = {
@@ -824,13 +836,13 @@ function updateDoorsAnimating() {
         if (state.phase === 'opening') {
             state.progress = Math.min(1, (now - state.startTime) / 500);
             if (state.progress >= 1) {
-                map[y][x] = 0;
+                map[y][x].wall = 0;
                 state.phase = 'open';
                 state.startTime = now;
             }
         } else if (state.phase === 'open') {
             if (now - state.startTime > 8000) {
-                map[y][x] = 5; // block for closing anim
+                map[y][x].wall = 5; // block for closing anim
                 state.phase = 'closing';
                 state.startTime = now;
                 state.progress = 0;
@@ -1169,7 +1181,7 @@ function getEmptyCells() {
     const empty = [];
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[0].length; x++) {
-            if (map[y][x] === 0 && !bulletPickups.some(b => b.x === x && b.y === y)) {
+            if (map[y][x].wall === 0 && !bulletPickups.some(b => b.x === x && b.y === y)) {
                 empty.push({x, y});
             }
         }
@@ -1220,7 +1232,7 @@ function getEmptyCellsForNPC() {
     for (let y = 0; y < map.length; y++) {
         for (let x = 0; x < map[0].length; x++) {
             if (
-                map[y][x] === 0 &&
+                map[y][x].wall === 0 &&
                 !npcs.some(n => n.x === x && n.y === y) &&
                 !bulletPickups.some(b => b.x === x && b.y === y)
             ) {
@@ -1421,7 +1433,7 @@ function updateNPCs() {
         // Check for collisions with walls
         const cellX = Math.floor(newX);
         const cellY = Math.floor(newY);
-        if (map[cellY] && map[cellY][cellX] === 0) {
+        if (map[cellY] && map[cellY][cellX].wall === 0) {
             // Check for collisions with other NPCs
             const hasNPCCollision = npcs.some(otherNpc => {
                 if (otherNpc === npc) return false;
@@ -1543,7 +1555,7 @@ function checkNPCCollision(x, y) {
         if (
             mapX < 0 || mapX >= map[0].length ||
             mapY < 0 || mapY >= map.length ||
-            map[mapY][mapX] !== 0
+            map[mapY][mapX].wall !== 0
         ) {
             return true; // Collides with wall or out of bounds
         }
