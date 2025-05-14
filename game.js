@@ -249,18 +249,38 @@ checkerboardCanvas.height = canvas.height;
 const cbCtx = checkerboardCanvas.getContext('2d');
 (function renderStaticCheckerboard() {
     const floorYStart = Math.floor(canvas.height / 2);
-    const cameraY = 0; // Camera at y=0
-    const cameraZ = 3; // Camera at z=3 (like your code)
-    const floorY = -1; // Floor plane at y=-1
-    const ceilingY = 1; // Ceiling plane at y=1
-    const squareSize = 1.0; // World size of checker squares
+    const cameraY = 0;
+    const cameraZ = 3;
+    const floorY = -1;
+    const ceilingY = 1;
+    const squareSize = 0.2; // Keep the small squares for pixelation
+    
+    // Floor colors - dark browns with more contrast
+    const floorColors = [
+        '#2d1a15', // Dark brown
+        '#3a221c', // Medium dark brown
+        '#261510', // Dark brown
+        '#331e18', // Medium dark brown
+        '#2b1812', // Dark brown
+        '#3d251f'  // Medium dark brown
+    ];
+    
+    // Ceiling colors - dark purples with more contrast
+    const ceilingColors = [
+        '#1a1228', // Dark purple
+        '#231a3d', // Medium dark purple
+        '#140f1f', // Dark purple
+        '#1d1636', // Medium dark purple
+        '#18102d', // Dark purple
+        '#2a1f4a'  // Medium dark purple
+    ];
     
     // --- Floor ---
     for (let y = floorYStart + 1; y < canvas.height; y++) {
         for (let x = 0; x < canvas.width; x++) {
             // Normalized device coordinates
             const uvx = (x - canvas.width / 2) / canvas.height;
-            const uvy = -((y - canvas.height / 2) / canvas.height); // Flip sign to point rays downward
+            const uvy = -((y - canvas.height / 2) / canvas.height);
             // Ray direction from camera through pixel
             const rd = [uvx, uvy, -1];
             // Normalize ray direction
@@ -268,54 +288,43 @@ const cbCtx = checkerboardCanvas.getContext('2d');
             rd[0] /= len; rd[1] /= len; rd[2] /= len;
             // Ray origin
             const ro = [0, cameraY, cameraZ];
-            // Ray-plane intersection: t = (floorY - ro.y) / rd.y
+            // Ray-plane intersection
             const t = (floorY - ro[1]) / rd[1];
             if (t > 0) {
                 // Intersection point
                 const hitX = ro[0] + t * rd[0];
                 const hitZ = ro[2] + t * rd[2];
-                // Checkerboard pattern
+                // Checkerboard pattern with smaller squares
                 const checkX = Math.floor(hitX / squareSize);
                 const checkZ = Math.floor(hitZ / squareSize);
                 const isBlack = (checkX + checkZ) % 2 === 0;
                 
                 // Calculate distance-based darkening factor
                 const distance = Math.sqrt(hitX * hitX + hitZ * hitZ);
-                const distanceDarkening = Math.min(1, distance / 10);
+                const distanceDarkening = Math.min(1, distance / 8); // Reduced darkening
                 
                 // Calculate center-based darkening factor
                 const distFromCenter = Math.abs(y - floorYStart) / (canvas.height / 2);
-                const centerDarkening = Math.pow(distFromCenter, 0.5); // Adjust power for effect intensity
+                const centerDarkening = Math.pow(distFromCenter, 0.6); // Reduced darkening
                 
                 // Combine both darkening factors
-                const totalDarkening = Math.min(1, distanceDarkening + centerDarkening * 0.5);
+                const totalDarkening = Math.min(1, distanceDarkening + centerDarkening * 0.6); // Reduced darkening
                 
-                // Base colors
-                const color1 = '#382622';
-                const color2 = '#2b1b18';
+                // Select color based on position
+                const colorIndex = Math.abs(checkX + checkZ) % floorColors.length;
+                const baseColor = isBlack ? floorColors[colorIndex] : floorColors[(colorIndex + 3) % floorColors.length];
                 
                 // Convert hex to RGB for darkening
-                const r1 = parseInt(color1.slice(1, 3), 16);
-                const g1 = parseInt(color1.slice(3, 5), 16);
-                const b1 = parseInt(color1.slice(5, 7), 16);
-                
-                const r2 = parseInt(color2.slice(1, 3), 16);
-                const g2 = parseInt(color2.slice(3, 5), 16);
-                const b2 = parseInt(color2.slice(5, 7), 16);
+                const r = parseInt(baseColor.slice(1, 3), 16);
+                const g = parseInt(baseColor.slice(3, 5), 16);
+                const b = parseInt(baseColor.slice(5, 7), 16);
                 
                 // Apply darkening
-                const darkenedR1 = Math.floor(r1 * (1 - totalDarkening * 0.5));
-                const darkenedG1 = Math.floor(g1 * (1 - totalDarkening * 0.5));
-                const darkenedB1 = Math.floor(b1 * (1 - totalDarkening * 0.5));
+                const darkenedR = Math.floor(r * (1 - totalDarkening * 0.7)); // Reduced darkening
+                const darkenedG = Math.floor(g * (1 - totalDarkening * 0.7));
+                const darkenedB = Math.floor(b * (1 - totalDarkening * 0.7));
                 
-                const darkenedR2 = Math.floor(r2 * (1 - totalDarkening * 0.5));
-                const darkenedG2 = Math.floor(g2 * (1 - totalDarkening * 0.5));
-                const darkenedB2 = Math.floor(b2 * (1 - totalDarkening * 0.5));
-                
-                // Set the color based on checkerboard pattern
-                cbCtx.fillStyle = isBlack ? 
-                    `rgb(${darkenedR1}, ${darkenedG1}, ${darkenedB1})` : 
-                    `rgb(${darkenedR2}, ${darkenedG2}, ${darkenedB2})`;
+                cbCtx.fillStyle = `rgb(${darkenedR}, ${darkenedG}, ${darkenedB})`;
                 cbCtx.fillRect(x, y, 1, 1);
             }
         }
@@ -326,7 +335,7 @@ const cbCtx = checkerboardCanvas.getContext('2d');
         for (let x = 0; x < canvas.width; x++) {
             // Normalized device coordinates
             const uvx = (x - canvas.width / 2) / canvas.height;
-            const uvy = -((y - canvas.height / 2) / canvas.height); // Flip sign to point rays upward
+            const uvy = -((y - canvas.height / 2) / canvas.height);
             // Ray direction from camera through pixel
             const rd = [uvx, uvy, -1];
             // Normalize ray direction
@@ -334,54 +343,43 @@ const cbCtx = checkerboardCanvas.getContext('2d');
             rd[0] /= len; rd[1] /= len; rd[2] /= len;
             // Ray origin
             const ro = [0, cameraY, cameraZ];
-            // Ray-plane intersection: t = (ceilingY - ro[1]) / rd[1]
+            // Ray-plane intersection
             const t = (ceilingY - ro[1]) / rd[1];
             if (t > 0) {
                 // Intersection point
                 const hitX = ro[0] + t * rd[0];
                 const hitZ = ro[2] + t * rd[2];
-                // Checkerboard pattern
+                // Checkerboard pattern with smaller squares
                 const checkX = Math.floor(hitX / squareSize);
                 const checkZ = Math.floor(hitZ / squareSize);
                 const isBlack = (checkX + checkZ) % 2 === 0;
                 
                 // Calculate distance-based darkening factor
                 const distance = Math.sqrt(hitX * hitX + hitZ * hitZ);
-                const distanceDarkening = Math.min(1, distance / 10);
+                const distanceDarkening = Math.min(1, distance / 8); // Reduced darkening
                 
                 // Calculate center-based darkening factor
                 const distFromCenter = Math.abs(y - floorYStart) / (canvas.height / 2);
-                const centerDarkening = Math.pow(distFromCenter, 0.5); // Adjust power for effect intensity
+                const centerDarkening = Math.pow(distFromCenter, 0.6); // Reduced darkening
                 
                 // Combine both darkening factors
-                const totalDarkening = Math.min(1, distanceDarkening + centerDarkening * 0.5);
+                const totalDarkening = Math.min(1, distanceDarkening + centerDarkening * 0.6); // Reduced darkening
                 
-                // Base colors
-                const color1 = '#1d1636';
-                const color2 = '#1c172b';
+                // Select color based on position
+                const colorIndex = Math.abs(checkX + checkZ) % ceilingColors.length;
+                const baseColor = isBlack ? ceilingColors[colorIndex] : ceilingColors[(colorIndex + 3) % ceilingColors.length];
                 
                 // Convert hex to RGB for darkening
-                const r1 = parseInt(color1.slice(1, 3), 16);
-                const g1 = parseInt(color1.slice(3, 5), 16);
-                const b1 = parseInt(color1.slice(5, 7), 16);
-                
-                const r2 = parseInt(color2.slice(1, 3), 16);
-                const g2 = parseInt(color2.slice(3, 5), 16);
-                const b2 = parseInt(color2.slice(5, 7), 16);
+                const r = parseInt(baseColor.slice(1, 3), 16);
+                const g = parseInt(baseColor.slice(3, 5), 16);
+                const b = parseInt(baseColor.slice(5, 7), 16);
                 
                 // Apply darkening
-                const darkenedR1 = Math.floor(r1 * (1 - totalDarkening * 0.5));
-                const darkenedG1 = Math.floor(g1 * (1 - totalDarkening * 0.5));
-                const darkenedB1 = Math.floor(b1 * (1 - totalDarkening * 0.5));
+                const darkenedR = Math.floor(r * (1 - totalDarkening * 0.7)); // Reduced darkening
+                const darkenedG = Math.floor(g * (1 - totalDarkening * 0.7));
+                const darkenedB = Math.floor(b * (1 - totalDarkening * 0.7));
                 
-                const darkenedR2 = Math.floor(r2 * (1 - totalDarkening * 0.5));
-                const darkenedG2 = Math.floor(g2 * (1 - totalDarkening * 0.5));
-                const darkenedB2 = Math.floor(b2 * (1 - totalDarkening * 0.5));
-                
-                // Set the color based on checkerboard pattern
-                cbCtx.fillStyle = isBlack ? 
-                    `rgb(${darkenedR1}, ${darkenedG1}, ${darkenedB1})` : 
-                    `rgb(${darkenedR2}, ${darkenedG2}, ${darkenedB2})`;
+                cbCtx.fillStyle = `rgb(${darkenedR}, ${darkenedG}, ${darkenedB})`;
                 cbCtx.fillRect(x, y, 1, 1);
             }
         }
