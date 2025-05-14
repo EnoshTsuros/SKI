@@ -257,7 +257,9 @@ const cbCtx = checkerboardCanvas.getContext('2d');
     const cameraY = 0; // Camera at y=0
     const cameraZ = 3; // Camera at z=3 (like your code)
     const floorY = -1; // Floor plane at y=-1
+    const ceilingY = 1; // Ceiling plane at y=1
     const squareSize = 1.0; // World size of checker squares
+    // --- Floor ---
     for (let y = floorYStart + 1; y < canvas.height; y++) {
         for (let x = 0; x < canvas.width; x++) {
             // Normalized device coordinates
@@ -272,6 +274,34 @@ const cbCtx = checkerboardCanvas.getContext('2d');
             const ro = [0, cameraY, cameraZ];
             // Ray-plane intersection: t = (floorY - ro.y) / rd.y
             const t = (floorY - ro[1]) / rd[1];
+            if (t > 0) {
+                // Intersection point
+                const hitX = ro[0] + t * rd[0];
+                const hitZ = ro[2] + t * rd[2];
+                // Checkerboard pattern
+                const checkX = Math.floor(hitX / squareSize);
+                const checkZ = Math.floor(hitZ / squareSize);
+                const isBlack = (checkX + checkZ) % 2 === 0;
+                cbCtx.fillStyle = isBlack ? '#444' : '#eee';
+                cbCtx.fillRect(x, y, 1, 1);
+            }
+        }
+    }
+    // --- Ceiling ---
+    for (let y = 0; y <= floorYStart; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+            // Normalized device coordinates
+            const uvx = (x - canvas.width / 2) / canvas.height;
+            const uvy = -((y - canvas.height / 2) / canvas.height); // Flip sign to point rays upward
+            // Ray direction from camera through pixel
+            const rd = [uvx, uvy, -1];
+            // Normalize ray direction
+            const len = Math.sqrt(rd[0]*rd[0] + rd[1]*rd[1] + rd[2]*rd[2]);
+            rd[0] /= len; rd[1] /= len; rd[2] /= len;
+            // Ray origin
+            const ro = [0, cameraY, cameraZ];
+            // Ray-plane intersection: t = (ceilingY - ro[1]) / rd[1]
+            const t = (ceilingY - ro[1]) / rd[1];
             if (t > 0) {
                 // Intersection point
                 const hitX = ro[0] + t * rd[0];
