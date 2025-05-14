@@ -254,15 +254,21 @@ checkerboardCanvas.height = canvas.height;
 const cbCtx = checkerboardCanvas.getContext('2d');
 (function renderStaticCheckerboard() {
     const floorYStart = Math.floor(canvas.height / 2);
-    const squareSize = 80; // Pixel size of squares at the bottom
+    const squareSize = 20; // Thinner lines
+    // First set of lines (radiating from horizon)
     for (let y = floorYStart + 1; y < canvas.height; y++) {
-        const scale = (canvas.height - y) / (canvas.height / 2);
+        const scale = (y - floorYStart) / (canvas.height / 2);
         const rowSquareSize = squareSize * scale;
         for (let x = 0; x < canvas.width; x++) {
             const col = Math.floor(x / rowSquareSize);
             const row = Math.floor((y - floorYStart) / rowSquareSize);
-            const isBlack = (col + row) % 2 === 0;
-            cbCtx.fillStyle = isBlack ? '#222' : '#eee';
+            let isBlack = (col % 2 === 0);
+            // Second set of lines (crossing, mirrored)
+            const col2 = Math.floor((canvas.width - x) / rowSquareSize);
+            const row2 = Math.floor((y - floorYStart) / rowSquareSize);
+            let isBlack2 = (col2 % 2 === 0);
+            // If either set is black, draw black, else white
+            cbCtx.fillStyle = (isBlack || isBlack2) ? '#222' : '#eee';
             cbCtx.fillRect(x, y, 1, 1);
         }
     }
