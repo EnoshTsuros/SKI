@@ -597,7 +597,7 @@ function draw3DView() {
                 const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
                 const ray = castRay(angleToPickup);
                 if (ray.distance + 0.2 < s.dist) return;
-                const spriteScale = 0.25;
+                const spriteScale = 0.35; // Increased from 0.25 to 0.35
                 const spriteHeight = Math.abs(canvas.height / s.dist * spriteScale);
                 const spriteWidth = spriteHeight;
                 const floorLine = (canvas.height / 2) + (canvas.height / (2 * s.dist));
@@ -689,15 +689,15 @@ function drawMap() {
         if (shotgunPickupImg.complete && shotgunPickupImg.naturalWidth > 0) {
             ctx.drawImage(
                 shotgunPickupImg,
-                s.x * cellSize + cellSize * 0.1,
-                s.y * cellSize + cellSize * 0.1,
-                cellSize * 0.8,
-                cellSize * 0.8
+                s.x * cellSize + cellSize * 0.05, // Reduced margin to make it larger
+                s.y * cellSize + cellSize * 0.05,
+                cellSize * 0.9, // Increased from 0.8 to 0.9
+                cellSize * 0.9
             );
         } else {
             ctx.fillStyle = '#f00';
             ctx.beginPath();
-            ctx.arc(s.x * cellSize + cellSize / 2, s.y * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+            ctx.arc(s.x * cellSize + cellSize / 2, s.y * cellSize + cellSize / 2, cellSize / 3, 0, Math.PI * 2); // Increased from /4 to /3
             ctx.fill();
         }
     });
@@ -1766,7 +1766,7 @@ function checkNPCCollision(x, y) {
 
 // --- Shotgun Pickup State ---
 const shotgunPickups = [];
-const maxShotgunPickups = 3;
+const maxShotgunPickups = 7; // Changed to 7 pickups
 const shotgunPickupImg = new Image();
 shotgunPickupImg.src = 'drop_shootgun.png';
 
@@ -1795,12 +1795,13 @@ function spawnShotgunPickup() {
     const idx = Math.floor(Math.random() * emptyCells.length);
     const pos = emptyCells[idx];
     shotgunPickups.push({ x: pos.x, y: pos.y });
+    console.log('Shotgun spawned. Current count:', shotgunPickups.length);
 }
 
-// Start shotgun pickup spawning interval
-setInterval(() => {
+// Initial spawn of shotguns
+for (let i = 0; i < maxShotgunPickups; i++) {
     spawnShotgunPickup();
-}, 1000);
+}
 
 // Collect shotgun pickups when player is close
 function collectShotgunPickups() {
@@ -1829,6 +1830,9 @@ function collectShotgunPickups() {
             } else {
                 console.log('Shotgun already owned');
             }
+            
+            // Spawn a new shotgun immediately to maintain the count
+            spawnShotgunPickup();
         }
     }
 }
