@@ -1143,11 +1143,11 @@ function drawGun() {
     if (player.currentWeapon === 'shotgun') {
         if (shotgunImages[gunFrameIndex]) {
             gunImg = shotgunImages[gunFrameIndex];
-            scale = 1.2; // Increased from 0.45 to 1.2
+            scale = 1.2;
             const gunWidth = gunImg.width * scale;
             const gunHeight = gunImg.height * scale;
             gunX = canvas.width / 2 - gunWidth / 2; // Centered horizontally
-            gunY = canvas.height - gunHeight - 20; // Moved up from bottom
+            gunY = canvas.height - gunHeight - 80; // Moved up from bottom (changed from -60 to -100)
             
             // Debug the canvas content
             console.log('Shotgun canvas details:', {
