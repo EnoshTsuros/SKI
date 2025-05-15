@@ -398,6 +398,7 @@ function draw3DView() {
     ctx.moveTo(0, Math.floor(canvas.height / 2));
     ctx.lineTo(canvas.width, Math.floor(canvas.height / 2));
     ctx.stroke();
+
     // Cast rays and draw walls
     for (let i = 0; i < NUM_RAYS; i++) {
         const currentAngle = playerAngle - FOV / 2 + i * (FOV / NUM_RAYS);
@@ -489,73 +490,80 @@ function draw3DView() {
         }
     }
 
-    // --- Draw bullet pickups as sprites in 3D view ---
-    bulletPickups
-        .map(b => {
-            const dx = b.x + 0.5 - playerX;
-            const dy = b.y + 0.5 - playerY;
-            return { ...b, dist: Math.sqrt(dx * dx + dy * dy), dx, dy };
-        })
-        .sort((a, b) => b.dist - a.dist) // farthest first
-        .forEach(b => {
-            if (b.dist < 0.6) return; // hide when stepping over
-            const angleToPickup = Math.atan2(b.dy, b.dx);
-            let relAngle = angleToPickup - playerAngle;
-            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
-            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
-            if (Math.abs(relAngle) < FOV / 2 && b.dist > 0.2) {
-                const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
-                const ray = castRay(angleToPickup);
-                if (ray.distance + 0.2 < b.dist) return; // occluded by wall
-
-                // --- TRUE FLOOR PROJECTION ---
-                const spriteScale = 0.25; // adjust for your sprite size
-                const spriteHeight = Math.abs(canvas.height / b.dist * spriteScale);
-                const spriteWidth = spriteHeight;
-                // Project the bottom of the sprite to the floor at this distance
-                const floorLine = (canvas.height / 2) + (canvas.height / (2 * b.dist));
-                const spriteY = floorLine - spriteHeight;
-
-                if (bulletPickupImg.complete && bulletPickupImg.naturalWidth > 0) {
-                    ctx.drawImage(
-                        bulletPickupImg,
-                        screenX - spriteWidth / 2,
-                        spriteY,
-                        spriteWidth,
-                        spriteHeight
-                    );
-                }
-            }
+    // Collect all sprites (NPCs, pickups) and sort them by distance
+    const allSprites = [];
+    
+    // Add NPCs
+    npcs.forEach(npc => {
+        const dx = npc.x + 0.5 - playerX;
+        const dy = npc.y + 0.5 - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        allSprites.push({
+            type: 'npc',
+            data: npc,
+            dist: dist,
+            dx: dx,
+            dy: dy
         });
+    });
 
-    // --- Draw NPCs as sprites in 3D view ---
-    npcs
-        .map(n => {
-            const dx = n.x + 0.5 - playerX;
-            const dy = n.y + 0.5 - playerY;
-            return { ...n, dist: Math.sqrt(dx * dx + dy * dy), dx, dy };
-        })
-        .sort((a, b) => b.dist - a.dist)
-        .forEach(n => {
-            if (n.dist < 0.6) return;
-            const angleToNPC = Math.atan2(n.dy, n.dx);
-            let relAngle = angleToNPC - playerAngle;
-            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
-            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
-            if (Math.abs(relAngle) < FOV / 2 && n.dist > 0.2) {
-                const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
-                const ray = castRay(angleToNPC);
-                if (ray.distance + 0.2 < n.dist) return;
-                const spriteScale = 0.7;
-                const spriteHeight = Math.abs(canvas.height / n.dist * spriteScale);
-                const spriteWidth = spriteHeight * (npcImg.width / npcImg.height);
-                const floorLine = (canvas.height / 2) + (canvas.height / (2 * n.dist));
-                const spriteY = floorLine - spriteHeight;
-                
-                const imgToDraw = getNPCSprite(n);
+    // Add bullet pickups
+    bulletPickups.forEach(b => {
+        const dx = b.x + 0.5 - playerX;
+        const dy = b.y + 0.5 - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        allSprites.push({
+            type: 'bullet',
+            data: b,
+            dist: dist,
+            dx: dx,
+            dy: dy
+        });
+    });
+
+    // Add shotgun pickups
+    shotgunPickups.forEach(s => {
+        const dx = s.x + 0.5 - playerX;
+        const dy = s.y + 0.5 - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        allSprites.push({
+            type: 'shotgun',
+            data: s,
+            dist: dist,
+            dx: dx,
+            dy: dy
+        });
+    });
+
+    // Sort all sprites by distance (farthest first)
+    allSprites.sort((a, b) => b.dist - a.dist);
+
+    // Draw all sprites in order
+    allSprites.forEach(sprite => {
+        if (sprite.dist < 0.6) return; // hide when stepping over
+        
+        const angleToSprite = Math.atan2(sprite.dy, sprite.dx);
+        let relAngle = angleToSprite - playerAngle;
+        while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+        while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+        
+        if (Math.abs(relAngle) < FOV / 2 && sprite.dist > 0.2) {
+            const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+            const ray = castRay(angleToSprite);
+            if (ray.distance + 0.2 < sprite.dist) return; // occluded by wall
+
+            const spriteScale = sprite.type === 'shotgun' ? 0.35 : 
+                              sprite.type === 'bullet' ? 0.25 : 0.7;
+            const spriteHeight = Math.abs(canvas.height / sprite.dist * spriteScale);
+            const spriteWidth = spriteHeight;
+            const floorLine = (canvas.height / 2) + (canvas.height / (2 * sprite.dist));
+            const spriteY = floorLine - spriteHeight;
+
+            if (sprite.type === 'npc') {
+                const imgToDraw = getNPCSprite(sprite.data);
                 if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
                     ctx.save();
-                    if (n.isWalkingLeft) {
+                    if (sprite.data.isWalkingLeft) {
                         ctx.translate(screenX + spriteWidth / 2, spriteY);
                         ctx.scale(-1, 1);
                         ctx.drawImage(
@@ -576,43 +584,25 @@ function draw3DView() {
                     }
                     ctx.restore();
                 }
+            } else if (sprite.type === 'bullet' && bulletPickupImg.complete && bulletPickupImg.naturalWidth > 0) {
+                ctx.drawImage(
+                    bulletPickupImg,
+                    screenX - spriteWidth / 2,
+                    spriteY,
+                    spriteWidth,
+                    spriteHeight
+                );
+            } else if (sprite.type === 'shotgun' && shotgunPickupImg.complete && shotgunPickupImg.naturalWidth > 0) {
+                ctx.drawImage(
+                    shotgunPickupImg,
+                    screenX - spriteWidth / 2,
+                    spriteY,
+                    spriteWidth,
+                    spriteHeight
+                );
             }
-        });
-
-    // --- Draw shotgun pickups as sprites in 3D view ---
-    shotgunPickups
-        .map(s => {
-            const dx = s.x + 0.5 - playerX;
-            const dy = s.y + 0.5 - playerY;
-            return { ...s, dist: Math.sqrt(dx * dx + dy * dy), dx, dy };
-        })
-        .sort((a, b) => b.dist - a.dist)
-        .forEach(s => {
-            if (s.dist < 0.6) return;
-            const angleToPickup = Math.atan2(s.dy, s.dx);
-            let relAngle = angleToPickup - playerAngle;
-            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
-            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
-            if (Math.abs(relAngle) < FOV / 2 && s.dist > 0.2) {
-                const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
-                const ray = castRay(angleToPickup);
-                if (ray.distance + 0.2 < s.dist) return;
-                const spriteScale = 0.35; // Increased from 0.25 to 0.35
-                const spriteHeight = Math.abs(canvas.height / s.dist * spriteScale);
-                const spriteWidth = spriteHeight;
-                const floorLine = (canvas.height / 2) + (canvas.height / (2 * s.dist));
-                const spriteY = floorLine - spriteHeight;
-                if (shotgunPickupImg.complete && shotgunPickupImg.naturalWidth > 0) {
-                    ctx.drawImage(
-                        shotgunPickupImg,
-                        screenX - spriteWidth / 2,
-                        spriteY,
-                        spriteWidth,
-                        spriteHeight
-                    );
-                }
-            }
-        });
+        }
+    });
 }
 
 // Helper function to apply shadow to a color
