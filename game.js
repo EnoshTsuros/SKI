@@ -880,7 +880,9 @@ function updatePlayer() {
 const player = {
     health: 100,
     arms: 1,
-    ammo: 100
+    ammo: 100,
+    weapons: ['handgun'], // Array of weapons the player has
+    currentWeapon: 'handgun' // Currently selected weapon
 };
 
 // Fireball state
@@ -1808,8 +1810,25 @@ function collectShotgunPickups() {
         const dy = (s.y + 0.5) - playerY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 0.6) {
+            console.log('Before pickup - Player state:', {
+                weapons: player.weapons,
+                currentWeapon: player.currentWeapon,
+                ammo: player.ammo
+            });
+            
             shotgunPickups.splice(i, 1);
-            // TODO: Give player a shotgun or ammo here
+            // Add shotgun to player's weapons if not already owned
+            if (!player.weapons.includes('shotgun')) {
+                player.weapons.push('shotgun');
+                console.log('After pickup - Player state:', {
+                    weapons: player.weapons,
+                    currentWeapon: player.currentWeapon,
+                    ammo: player.ammo
+                });
+                console.log('New weapon acquired: shotgun');
+            } else {
+                console.log('Shotgun already owned');
+            }
         }
     }
 }
