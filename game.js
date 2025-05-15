@@ -578,6 +578,41 @@ function draw3DView() {
                 }
             }
         });
+
+    // --- Draw shotgun pickups as sprites in 3D view ---
+    shotgunPickups
+        .map(s => {
+            const dx = s.x + 0.5 - playerX;
+            const dy = s.y + 0.5 - playerY;
+            return { ...s, dist: Math.sqrt(dx * dx + dy * dy), dx, dy };
+        })
+        .sort((a, b) => b.dist - a.dist)
+        .forEach(s => {
+            if (s.dist < 0.6) return;
+            const angleToPickup = Math.atan2(s.dy, s.dx);
+            let relAngle = angleToPickup - playerAngle;
+            while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+            while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+            if (Math.abs(relAngle) < FOV / 2 && s.dist > 0.2) {
+                const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+                const ray = castRay(angleToPickup);
+                if (ray.distance + 0.2 < s.dist) return;
+                const spriteScale = 0.25;
+                const spriteHeight = Math.abs(canvas.height / s.dist * spriteScale);
+                const spriteWidth = spriteHeight;
+                const floorLine = (canvas.height / 2) + (canvas.height / (2 * s.dist));
+                const spriteY = floorLine - spriteHeight;
+                if (shotgunPickupImg.complete && shotgunPickupImg.naturalWidth > 0) {
+                    ctx.drawImage(
+                        shotgunPickupImg,
+                        screenX - spriteWidth / 2,
+                        spriteY,
+                        spriteWidth,
+                        spriteHeight
+                    );
+                }
+            }
+        });
 }
 
 // Helper function to apply shadow to a color
@@ -646,6 +681,23 @@ function drawMap() {
             ctx.fillStyle = '#ff0';
             ctx.beginPath();
             ctx.arc(b.x * cellSize + cellSize / 2, b.y * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+    // Draw shotgun pickups as images if loaded, else red circle
+    shotgunPickups.forEach(s => {
+        if (shotgunPickupImg.complete && shotgunPickupImg.naturalWidth > 0) {
+            ctx.drawImage(
+                shotgunPickupImg,
+                s.x * cellSize + cellSize * 0.1,
+                s.y * cellSize + cellSize * 0.1,
+                cellSize * 0.8,
+                cellSize * 0.8
+            );
+        } else {
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(s.x * cellSize + cellSize / 2, s.y * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
             ctx.fill();
         }
     });
@@ -1052,6 +1104,7 @@ function gameLoop() {
     updateDoorsAnimating();
     updateNPCs();
     collectBulletPickups();
+    collectShotgunPickups();
     draw();
     requestAnimationFrame(gameLoop);
 }
@@ -1707,4 +1760,56 @@ function checkNPCCollision(x, y) {
         }
     }
     return false;
+}
+
+// --- Shotgun Pickup State ---
+const shotgunPickups = [];
+const maxShotgunPickups = 3;
+const shotgunPickupImg = new Image();
+shotgunPickupImg.src = 'drop_shootgun.png';
+
+// Helper to get all empty cells not occupied by pickups
+function getEmptyCellsForShotgun() {
+    const empty = [];
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+            if (
+                map[y][x] === 0 &&
+                !bulletPickups.some(b => b.x === x && b.y === y) &&
+                !shotgunPickups.some(s => s.x === x && s.y === y)
+            ) {
+                empty.push({x, y});
+            }
+        }
+    }
+    return empty;
+}
+
+// Spawn a shotgun pickup at a random empty cell
+function spawnShotgunPickup() {
+    if (shotgunPickups.length >= maxShotgunPickups) return;
+    const emptyCells = getEmptyCellsForShotgun();
+    if (emptyCells.length === 0) return;
+    const idx = Math.floor(Math.random() * emptyCells.length);
+    const pos = emptyCells[idx];
+    shotgunPickups.push({ x: pos.x, y: pos.y });
+}
+
+// Start shotgun pickup spawning interval
+setInterval(() => {
+    spawnShotgunPickup();
+}, 1000);
+
+// Collect shotgun pickups when player is close
+function collectShotgunPickups() {
+    for (let i = shotgunPickups.length - 1; i >= 0; i--) {
+        const s = shotgunPickups[i];
+        const dx = (s.x + 0.5) - playerX;
+        const dy = (s.y + 0.5) - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.6) {
+            shotgunPickups.splice(i, 1);
+            // TODO: Give player a shotgun or ammo here
+        }
+    }
 }
