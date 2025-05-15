@@ -536,6 +536,20 @@ function draw3DView() {
         });
     });
 
+    // Add lizergun pickups
+    lizergunPickups.forEach(l => {
+        const dx = l.x + 0.5 - playerX;
+        const dy = l.y + 0.5 - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        allSprites.push({
+            type: 'lizergun',
+            data: l,
+            dist: dist,
+            dx: dx,
+            dy: dy
+        });
+    });
+
     // Sort all sprites by distance (farthest first)
     allSprites.sort((a, b) => b.dist - a.dist);
 
@@ -554,7 +568,8 @@ function draw3DView() {
             if (ray.distance + 0.2 < sprite.dist) return; // occluded by wall
 
             const spriteScale = sprite.type === 'shotgun' ? 0.35 : 
-                              sprite.type === 'bullet' ? 0.25 : 0.7;
+                              sprite.type === 'bullet' ? 0.25 : 
+                              sprite.type === 'lizergun' ? 0.28 : 0.7; // Increased lizergun scale from 0.2 to 0.28
             const spriteHeight = Math.abs(canvas.height / sprite.dist * spriteScale);
             const spriteWidth = spriteHeight;
             const floorLine = (canvas.height / 2) + (canvas.height / (2 * sprite.dist));
@@ -596,6 +611,14 @@ function draw3DView() {
             } else if (sprite.type === 'shotgun' && shotgunPickupImg.complete && shotgunPickupImg.naturalWidth > 0) {
                 ctx.drawImage(
                     shotgunPickupImg,
+                    screenX - spriteWidth / 2,
+                    spriteY,
+                    spriteWidth,
+                    spriteHeight
+                );
+            } else if (sprite.type === 'lizergun' && lizergunPickupImg.complete && lizergunPickupImg.naturalWidth > 0) {
+                ctx.drawImage(
+                    lizergunPickupImg,
                     screenX - spriteWidth / 2,
                     spriteY,
                     spriteWidth,
@@ -689,6 +712,23 @@ function drawMap() {
             ctx.fillStyle = '#f00';
             ctx.beginPath();
             ctx.arc(s.x * cellSize + cellSize / 2, s.y * cellSize + cellSize / 2, cellSize / 3, 0, Math.PI * 2); // Increased from /4 to /3
+            ctx.fill();
+        }
+    });
+    // Draw lizergun pickups as images if loaded, else blue circle
+    lizergunPickups.forEach(l => {
+        if (lizergunPickupImg.complete && lizergunPickupImg.naturalWidth > 0) {
+            ctx.drawImage(
+                lizergunPickupImg,
+                l.x * cellSize + cellSize * 0.05,
+                l.y * cellSize + cellSize * 0.05,
+                cellSize * 0.9,
+                cellSize * 0.9
+            );
+        } else {
+            ctx.fillStyle = '#00f';
+            ctx.beginPath();
+            ctx.arc(l.x * cellSize + cellSize / 2, l.y * cellSize + cellSize / 2, cellSize / 3, 0, Math.PI * 2);
             ctx.fill();
         }
     });
@@ -956,21 +996,41 @@ function drawFireball() {
     const r = fireball.startRadius + (fireball.endRadius - fireball.startRadius) * t;
     ctx.save();
     ctx.globalAlpha = 1 - t * 0.7;
-    // Outer glow
-    ctx.beginPath();
-    ctx.arc(fireball.x, y, r * 1.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 40, 0, 0.3)';
-    ctx.fill();
-    // Main fireball
-    ctx.beginPath();
-    ctx.arc(fireball.x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = 'red';
-    ctx.fill();
-    // Core
-    ctx.beginPath();
-    ctx.arc(fireball.x, y, r * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 100, 100, 1)';
-    ctx.fill();
+    
+    // Change fireball color based on current weapon
+    if (player.currentWeapon === 'lizergun') {
+        // Blue fireball for lizergun
+        ctx.beginPath();
+        ctx.arc(fireball.x, y, r * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 40, 255, 0.3)';
+        ctx.fill();
+        // Main fireball
+        ctx.beginPath();
+        ctx.arc(fireball.x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+        // Core
+        ctx.beginPath();
+        ctx.arc(fireball.x, y, r * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 100, 255, 1)';
+        ctx.fill();
+    } else {
+        // Original red fireball for other weapons
+        ctx.beginPath();
+        ctx.arc(fireball.x, y, r * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 40, 0, 0.3)';
+        ctx.fill();
+        // Main fireball
+        ctx.beginPath();
+        ctx.arc(fireball.x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+        // Core
+        ctx.beginPath();
+        ctx.arc(fireball.x, y, r * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 100, 100, 1)';
+        ctx.fill();
+    }
     ctx.restore();
 }
 
@@ -1122,6 +1182,10 @@ window.addEventListener('keydown', (e) => {
         player.currentWeapon = 'shotgun';
         gunFrameIndex = 0;
         console.log('Switched to shotgun');
+    } else if (e.key === '3' && player.weapons.includes('lizergun')) {
+        player.currentWeapon = 'lizergun';
+        gunFrameIndex = 0;
+        console.log('Switched to lizergun');
     }
 });
 
@@ -1176,6 +1240,38 @@ function drawGun() {
             gunX, gunY, gunWidth, gunHeight     // Destination rectangle
         );
         ctx.restore();
+    } else if (player.currentWeapon === 'lizergun') {
+        if (lizergunImages[gunFrameIndex]) {
+            gunImg = lizergunImages[gunFrameIndex];
+            scale = 0.4;
+            const gunWidth = gunImg.width * scale;
+            const gunHeight = gunImg.height * scale;
+            let gunX = canvas.width / 2 - gunWidth / 2;
+            
+            // Add horizontal shift when shooting (frames 1-3)
+            if (gunFrameIndex > 0 && gunFrameIndex < 4) {
+                gunX += 40;
+            }
+            
+            gunY = canvas.height - gunHeight - 2;
+            
+            console.log('Drawing lizergun:', {
+                frame: gunFrameIndex,
+                scale: scale,
+                position: { x: gunX, y: gunY },
+                size: { width: gunWidth, height: gunHeight }
+            });
+            
+            ctx.save();
+            ctx.drawImage(
+                gunImg,
+                0, 0, gunImg.width, gunImg.height,
+                gunX, gunY, gunWidth, gunHeight
+            );
+            ctx.restore();
+        } else {
+            console.error('Lizergun frame not available:', gunFrameIndex);
+        }
     }
 }
 
@@ -1188,6 +1284,7 @@ function gameLoop() {
     updateNPCs();
     collectBulletPickups();
     collectShotgunPickups();
+    collectLizergunPickups(); // Add this line
     draw();
     requestAnimationFrame(gameLoop);
 }
@@ -1923,3 +2020,120 @@ function collectShotgunPickups() {
         }
     }
 }
+
+// --- Lizergun Pickup State ---
+const lizergunPickups = [];
+const maxLizergunPickups = 7;
+const lizergunPickupImg = new Image();
+lizergunPickupImg.src = 'lizergun.png';
+
+// Helper to get all empty cells not occupied by pickups
+function getEmptyCellsForLizergun() {
+    const empty = [];
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+            if (
+                map[y][x] === 0 &&
+                !bulletPickups.some(b => b.x === x && b.y === y) &&
+                !shotgunPickups.some(s => s.x === x && s.y === y) &&
+                !lizergunPickups.some(l => l.x === x && l.y === y)
+            ) {
+                empty.push({x, y});
+            }
+        }
+    }
+    return empty;
+}
+
+// Spawn a lizergun pickup at a random empty cell
+function spawnLizergunPickup() {
+    if (lizergunPickups.length >= maxLizergunPickups) return;
+    const emptyCells = getEmptyCellsForLizergun();
+    if (emptyCells.length === 0) return;
+    const idx = Math.floor(Math.random() * emptyCells.length);
+    const pos = emptyCells[idx];
+    lizergunPickups.push({ x: pos.x, y: pos.y });
+    console.log('Lizergun spawned. Current count:', lizergunPickups.length);
+}
+
+// Initial spawn of lizerguns
+for (let i = 0; i < maxLizergunPickups; i++) {
+    spawnLizergunPickup();
+}
+
+// Collect lizergun pickups when player is close
+function collectLizergunPickups() {
+    for (let i = lizergunPickups.length - 1; i >= 0; i--) {
+        const l = lizergunPickups[i];
+        const dx = (l.x + 0.5) - playerX;
+        const dy = (l.y + 0.5) - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.6) {
+            console.log('Before pickup - Player state:', {
+                weapons: player.weapons,
+                currentWeapon: player.currentWeapon,
+                ammo: player.ammo
+            });
+            
+            lizergunPickups.splice(i, 1);
+            // Add lizergun to player's weapons if not already owned
+            if (!player.weapons.includes('lizergun')) {
+                player.weapons.push('lizergun');
+                // Automatically switch to lizergun when collected
+                player.currentWeapon = 'lizergun';
+                gunFrameIndex = 0; // Reset gun animation frame
+                console.log('After pickup - Player state:', {
+                    weapons: player.weapons,
+                    currentWeapon: player.currentWeapon,
+                    ammo: player.ammo
+                });
+                console.log('New weapon acquired: lizergun and automatically equipped');
+            } else {
+                // If already owned, still switch to lizergun
+                player.currentWeapon = 'lizergun';
+                gunFrameIndex = 0;
+                console.log('Switched to lizergun');
+            }
+            
+            // Spawn a new lizergun immediately to maintain the count
+            spawnLizergunPickup();
+        }
+    }
+}
+
+// Load and crop lizergun.png into 4 transparent images
+const lizergunSrc = 'liser_fps.png';
+const lizergunImages = [];
+const lizergunImg = new Image();
+lizergunImg.src = lizergunSrc;
+lizergunImg.onload = () => {
+    console.log('Lizergun image loaded successfully:', {
+        width: lizergunImg.width,
+        height: lizergunImg.height
+    });
+    const frameWidth = lizergunImg.width / 4;
+    const frameHeight = lizergunImg.height;
+    for (let i = 0; i < 4; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx2 = canvas.getContext('2d');
+        ctx2.drawImage(lizergunImg, i * frameWidth - 10, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+        // Remove cyan background (0,255,255)
+        const imgData = ctx2.getImageData(0, 0, frameWidth, frameHeight);
+        for (let p = 0; p < imgData.data.length; p += 4) {
+            if (imgData.data[p] === 0 && imgData.data[p+1] === 255 && imgData.data[p+2] === 255) {
+                imgData.data[p+3] = 0;
+            }
+        }
+        ctx2.putImageData(imgData, 0, 0);
+        lizergunImages.push(canvas);
+        console.log(`Lizergun frame ${i} created:`, {
+            width: frameWidth,
+            height: frameHeight
+        });
+    }
+};
+lizergunImg.onerror = () => {
+    console.error('Failed to load lizergun image');
+};
