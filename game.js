@@ -1056,7 +1056,7 @@ function updateDoorsAnimating() {
     }
 }
 
-// Load and crop shootgun.png into 4 transparent images
+// Load and crop handgun.png into 4 transparent images
 const handgunSrc = 'handgun.png';
 const handgunImages = [];
 const handgunImg = new Image();
@@ -1082,19 +1082,109 @@ handgunImg.onload = () => {
     }
 };
 
+// Load and crop shootgun.png into 4 transparent images
+const shotgunSrc = 'shootgun.png';
+const shotgunImages = [];
+const shotgunImg = new Image();
+shotgunImg.src = shotgunSrc;
+shotgunImg.onload = () => {
+    console.log('Shotgun image loaded successfully:', {
+        width: shotgunImg.width,
+        height: shotgunImg.height
+    });
+    const frameWidth = shotgunImg.width / 4;
+    const frameHeight = shotgunImg.height;
+    for (let i = 0; i < 4; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx2 = canvas.getContext('2d');
+        ctx2.drawImage(shotgunImg, i * frameWidth - 10, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+        // Remove cyan background (0,255,255)
+        const imgData = ctx2.getImageData(0, 0, frameWidth, frameHeight);
+        for (let p = 0; p < imgData.data.length; p += 4) {
+            if (imgData.data[p] === 0 && imgData.data[p+1] === 255 && imgData.data[p+2] === 255) {
+                imgData.data[p+3] = 0;
+            }
+        }
+        ctx2.putImageData(imgData, 0, 0);
+        shotgunImages.push(canvas);
+        console.log(`Shotgun frame ${i} created:`, {
+            width: frameWidth,
+            height: frameHeight
+        });
+    }
+};
+shotgunImg.onerror = () => {
+    console.error('Failed to load shotgun image');
+};
+
 let gunFrameIndex = 0;
 
-// Replace drawGun to use the first handgun image
+// Add weapon switching
+window.addEventListener('keydown', (e) => {
+    if (e.key === '1' && player.weapons.includes('handgun')) {
+        player.currentWeapon = 'handgun';
+        gunFrameIndex = 0;
+        console.log('Switched to handgun');
+    } else if (e.key === '2' && player.weapons.includes('shotgun')) {
+        player.currentWeapon = 'shotgun';
+        gunFrameIndex = 0;
+        console.log('Switched to shotgun');
+    }
+});
+
+// Update drawGun to handle different weapons
 function drawGun() {
     const barHeight = 24;
-    const gunImg = handgunImages[gunFrameIndex];
-    if (gunImg) {
-        const scale = 0.35;
+    let gunImg;
+    let scale, gunX, gunY;
+    
+    if (player.currentWeapon === 'shotgun') {
+        if (shotgunImages[gunFrameIndex]) {
+            gunImg = shotgunImages[gunFrameIndex];
+            scale = 1.2; // Increased from 0.45 to 1.2
+            const gunWidth = gunImg.width * scale;
+            const gunHeight = gunImg.height * scale;
+            gunX = canvas.width / 2 - gunWidth / 2; // Centered horizontally
+            gunY = canvas.height - gunHeight - 20; // Moved up from bottom
+            
+            // Debug the canvas content
+            console.log('Shotgun canvas details:', {
+                width: gunImg.width,
+                height: gunImg.height,
+                scale: scale,
+                finalWidth: gunWidth,
+                finalHeight: gunHeight,
+                position: { x: gunX, y: gunY }
+            });
+
+            // Draw with explicit dimensions
+            ctx.save();
+            ctx.drawImage(
+                gunImg,
+                0, 0, gunImg.width, gunImg.height,  // Source rectangle
+                gunX, gunY, gunWidth, gunHeight     // Destination rectangle
+            );
+            ctx.restore();
+        } else {
+            console.error('Shotgun frame not available:', gunFrameIndex);
+        }
+    } else if (player.currentWeapon === 'handgun' && handgunImages[gunFrameIndex]) {
+        gunImg = handgunImages[gunFrameIndex];
+        scale = 0.35;
         const gunWidth = gunImg.width * scale;
         const gunHeight = gunImg.height * scale;
-        const gunX = canvas.width / 2 - gunWidth / 2 + 50; // Added 50 pixels to move it right
-        const gunY = canvas.height - barHeight - gunHeight - 5;
-        ctx.drawImage(gunImg, gunX, gunY, gunWidth, gunHeight);
+        gunX = canvas.width / 2 - gunWidth / 2 + 50;
+        gunY = canvas.height - barHeight - gunHeight - 5;
+        
+        ctx.save();
+        ctx.drawImage(
+            gunImg,
+            0, 0, gunImg.width, gunImg.height,  // Source rectangle
+            gunX, gunY, gunWidth, gunHeight     // Destination rectangle
+        );
+        ctx.restore();
     }
 }
 
