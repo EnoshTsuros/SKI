@@ -257,12 +257,13 @@ const cbCtx = checkerboardCanvas.getContext('2d');
     
     // Floor colors - dark browns with more contrast
     const floorColors = [
-        '#2d1a15', // Dark brown
-        '#3a221c', // Medium dark brown
+        '#2d2715', // Dark brown
+        '#2d2d15', // Medium dark brown
         '#261510', // Dark brown
-        '#331e18', // Medium dark brown
-        '#2b1812', // Dark brown
-        '#3d251f'  // Medium dark brown
+        '#212d15', // Medium dark brown
+        '#683c31', // Dark brown
+        '#573229'  // Medium dark brown
+
     ];
     
     // Ceiling colors - dark purples with more contrast
@@ -1901,14 +1902,20 @@ function collectShotgunPickups() {
             // Add shotgun to player's weapons if not already owned
             if (!player.weapons.includes('shotgun')) {
                 player.weapons.push('shotgun');
+                // Automatically switch to shotgun when collected
+                player.currentWeapon = 'shotgun';
+                gunFrameIndex = 0; // Reset gun animation frame
                 console.log('After pickup - Player state:', {
                     weapons: player.weapons,
                     currentWeapon: player.currentWeapon,
                     ammo: player.ammo
                 });
-                console.log('New weapon acquired: shotgun');
+                console.log('New weapon acquired: shotgun and automatically equipped');
             } else {
-                console.log('Shotgun already owned');
+                // If already owned, still switch to shotgun
+                player.currentWeapon = 'shotgun';
+                gunFrameIndex = 0;
+                console.log('Switched to shotgun');
             }
             
             // Spawn a new shotgun immediately to maintain the count
