@@ -935,6 +935,10 @@ liserSound.volume = 1.0; // Set as desired
 const pistolSound = new Audio('pistol.wav');
 pistolSound.volume = 1.0; // Set as desired
 
+// --- Load door open sound ---
+const doorOpenSound = new Audio('dooropen.wav');
+doorOpenSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
@@ -1120,6 +1124,13 @@ window.addEventListener('keydown', (e) => {
                             progress: 0,
                             doorType: map[ny][nx] // Store the original door type
                         };
+                        // Play door open sound
+                        try {
+                            doorOpenSound.currentTime = 0;
+                            doorOpenSound.play();
+                        } catch (e) {
+                            // Ignore play errors
+                        }
                     }
                 }
             }
