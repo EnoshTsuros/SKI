@@ -989,20 +989,30 @@ window.addEventListener('keydown', (e) => {
                 }
             }
         });
+        // Check if NPC is occluded by a wall
         if (closestNPC) {
-            closestNPC.health -= 25;
-            closestNPC.state = 'injured';
-            closestNPC.injuredUntil = Date.now() + 1000;
-            // Play hurt sound
-            try {
-                npcHurtSound.currentTime = 0;
-                npcHurtSound.play();
-            } catch (e) {
-                // Ignore play errors
-            }
-            if (closestNPC.health <= 0) {
-                const idx = npcs.indexOf(closestNPC);
-                if (idx !== -1) npcs.splice(idx, 1);
+            const dx = (closestNPC.x + 0.5) - playerX;
+            const dy = (closestNPC.y + 0.5) - playerY;
+            const angleToNPC = Math.atan2(dy, dx);
+            const ray = castRay(angleToNPC);
+            // Only hit if the ray distance is greater than or equal to the NPC distance (no wall in between)
+            if (ray.distance >= closestDist - 0.2) { // 0.2 margin for hitbox
+                closestNPC.health -= 25;
+                closestNPC.state = 'injured';
+                closestNPC.injuredUntil = Date.now() + 1000;
+                // Play hurt sound
+                try {
+                    npcHurtSound.currentTime = 0;
+                    npcHurtSound.play();
+                } catch (e) {
+                    // Ignore play errors
+                }
+                if (closestNPC.health <= 0) {
+                    const idx = npcs.indexOf(closestNPC);
+                    if (idx !== -1) npcs.splice(idx, 1);
+                }
+            } else {
+                console.log('NPC is behind a wall, not hit');
             }
         } else {
             console.log('No NPC hit');
