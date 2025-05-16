@@ -927,13 +927,23 @@ npcHurtSound.volume = 1.0; // Set as desired
 const shotgunSound = new Audio('shotgun.wav');
 shotgunSound.volume = 1.0; // Set as desired
 
+// --- Load liser fire sound ---
+const liserSound = new Audio('liser.wav');
+liserSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
-        // Play shotgun sound
+        // Play weapon sound based on current weapon
         try {
-            shotgunSound.currentTime = 0;
-            shotgunSound.play();
+            if (player.currentWeapon === 'shotgun') {
+                shotgunSound.currentTime = 0;
+                shotgunSound.play();
+            } else if (player.currentWeapon === 'lizergun') {
+                liserSound.currentTime = 0;
+                liserSound.play();
+            }
+            // No sound for handgun
         } catch (e) {
             // Ignore play errors
         }
