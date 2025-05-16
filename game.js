@@ -2111,14 +2111,27 @@ lizergunImg.onload = () => {
         width: lizergunImg.width,
         height: lizergunImg.height
     });
-    const frameWidth = lizergunImg.width / 4;
+    const frameWidth = Math.floor(lizergunImg.width / 4);
     const frameHeight = lizergunImg.height;
+    lizergunImages.length = 0;
+    const cropOffset = 15; // Increased number of pixels to shift crop to the right
     for (let i = 0; i < 4; i++) {
         const canvas = document.createElement('canvas');
         canvas.width = frameWidth;
         canvas.height = frameHeight;
         const ctx2 = canvas.getContext('2d');
-        ctx2.drawImage(lizergunImg, i * frameWidth - 10, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+        // For the last frame, make sure we don't overflow the image
+        let sx = i * frameWidth + cropOffset;
+        let sw = (i === 3) ? (lizergunImg.width - sx) : frameWidth;
+        // Prevent sw from being negative or zero
+        if (sw < 1) sw = 1;
+        ctx2.drawImage(
+            lizergunImg,
+            sx, 0,  // Source x, y
+            sw, frameHeight,  // Source width, height
+            0, 0,  // Destination x, y
+            frameWidth, frameHeight  // Destination width, height
+        );
         // Remove cyan background (0,255,255)
         const imgData = ctx2.getImageData(0, 0, frameWidth, frameHeight);
         for (let p = 0; p < imgData.data.length; p += 4) {
@@ -2130,10 +2143,9 @@ lizergunImg.onload = () => {
         lizergunImages.push(canvas);
         console.log(`Lizergun frame ${i} created:`, {
             width: frameWidth,
-            height: frameHeight
+            height: frameHeight,
+            sourceX: sx,
+            sourceWidth: sw
         });
     }
-};
-lizergunImg.onerror = () => {
-    console.error('Failed to load lizergun image');
 };
