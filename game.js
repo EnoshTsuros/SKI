@@ -919,6 +919,10 @@ const player = {
 // Fireball state
 let fireball = null;
 
+// --- Load NPC hurt sound ---
+const npcHurtSound = new Audio('niro_hurt.wav');
+npcHurtSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
@@ -962,6 +966,13 @@ window.addEventListener('keydown', (e) => {
             closestNPC.health -= 25;
             closestNPC.state = 'injured';
             closestNPC.injuredUntil = Date.now() + 1000;
+            // Play hurt sound
+            try {
+                npcHurtSound.currentTime = 0;
+                npcHurtSound.play();
+            } catch (e) {
+                // Ignore play errors
+            }
             if (closestNPC.health <= 0) {
                 const idx = npcs.indexOf(closestNPC);
                 if (idx !== -1) npcs.splice(idx, 1);
