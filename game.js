@@ -923,9 +923,20 @@ let fireball = null;
 const npcHurtSound = new Audio('niro_hurt.wav');
 npcHurtSound.volume = 1.0; // Set as desired
 
+// --- Load shotgun fire sound ---
+const shotgunSound = new Audio('shotgun.wav');
+shotgunSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
+        // Play shotgun sound
+        try {
+            shotgunSound.currentTime = 0;
+            shotgunSound.play();
+        } catch (e) {
+            // Ignore play errors
+        }
         // Fireball starts at gun muzzle (bottom center)
         const barHeight = 80;
         const gunHeight = 60;
