@@ -943,6 +943,10 @@ doorOpenSound.volume = 1.0; // Set as desired
 const doorCloseSound = new Audio('doorclose.wav');
 doorCloseSound.volume = 1.0; // Set as desired
 
+// --- Load weapon pickup sound ---
+const weaponPickupSound = new Audio('wpick.wav');
+weaponPickupSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
@@ -2072,6 +2076,11 @@ function collectShotgunPickups() {
                 // Automatically switch to shotgun when collected
                 player.currentWeapon = 'shotgun';
                 gunFrameIndex = 0; // Reset gun animation frame
+                // Play weapon pickup sound
+                try {
+                    weaponPickupSound.currentTime = 0;
+                    weaponPickupSound.play();
+                } catch (e) {}
                 console.log('After pickup - Player state:', {
                     weapons: player.weapons,
                     currentWeapon: player.currentWeapon,
@@ -2152,6 +2161,11 @@ function collectLizergunPickups() {
                 // Automatically switch to lizergun when collected
                 player.currentWeapon = 'lizergun';
                 gunFrameIndex = 0; // Reset gun animation frame
+                // Play weapon pickup sound
+                try {
+                    weaponPickupSound.currentTime = 0;
+                    weaponPickupSound.play();
+                } catch (e) {}
                 console.log('After pickup - Player state:', {
                     weapons: player.weapons,
                     currentWeapon: player.currentWeapon,
