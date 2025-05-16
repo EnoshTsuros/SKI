@@ -939,6 +939,10 @@ pistolSound.volume = 1.0; // Set as desired
 const doorOpenSound = new Audio('dooropen.wav');
 doorOpenSound.volume = 1.0; // Set as desired
 
+// --- Load door close sound ---
+const doorCloseSound = new Audio('doorclose.wav');
+doorCloseSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
@@ -1160,6 +1164,13 @@ function updateDoorsAnimating() {
         } else if (state.phase === 'closing') {
             state.progress = Math.min(1, (now - state.startTime) / 500);
             if (state.progress >= 1) {
+                // Play door close sound
+                try {
+                    doorCloseSound.currentTime = 0;
+                    doorCloseSound.play();
+                } catch (e) {
+                    // Ignore play errors
+                }
                 delete doorsAnimating[key];
             }
         }
