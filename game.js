@@ -1666,6 +1666,11 @@ function collectBulletPickups() {
         if (dist < 0.6) { // same threshold as hiding sprite
             bulletPickups.splice(i, 1); // Remove the pickup
             player.ammo += 5;           // Add 5 ammo
+            // Play weapon pickup sound (for bullets too)
+            try {
+                weaponPickupSound.currentTime = 0;
+                weaponPickupSound.play();
+            } catch (e) {}
         }
     }
 }
@@ -2068,7 +2073,6 @@ function collectShotgunPickups() {
                 currentWeapon: player.currentWeapon,
                 ammo: player.ammo
             });
-            
             shotgunPickups.splice(i, 1);
             // Add shotgun to player's weapons if not already owned
             if (!player.weapons.includes('shotgun')) {
@@ -2076,11 +2080,6 @@ function collectShotgunPickups() {
                 // Automatically switch to shotgun when collected
                 player.currentWeapon = 'shotgun';
                 gunFrameIndex = 0; // Reset gun animation frame
-                // Play weapon pickup sound
-                try {
-                    weaponPickupSound.currentTime = 0;
-                    weaponPickupSound.play();
-                } catch (e) {}
                 console.log('After pickup - Player state:', {
                     weapons: player.weapons,
                     currentWeapon: player.currentWeapon,
@@ -2093,7 +2092,11 @@ function collectShotgunPickups() {
                 gunFrameIndex = 0;
                 console.log('Switched to shotgun');
             }
-            
+            // Play weapon pickup sound (always)
+            try {
+                weaponPickupSound.currentTime = 0;
+                weaponPickupSound.play();
+            } catch (e) {}
             // Spawn a new shotgun immediately to maintain the count
             spawnShotgunPickup();
         }
@@ -2153,7 +2156,6 @@ function collectLizergunPickups() {
                 currentWeapon: player.currentWeapon,
                 ammo: player.ammo
             });
-            
             lizergunPickups.splice(i, 1);
             // Add lizergun to player's weapons if not already owned
             if (!player.weapons.includes('lizergun')) {
@@ -2161,11 +2163,6 @@ function collectLizergunPickups() {
                 // Automatically switch to lizergun when collected
                 player.currentWeapon = 'lizergun';
                 gunFrameIndex = 0; // Reset gun animation frame
-                // Play weapon pickup sound
-                try {
-                    weaponPickupSound.currentTime = 0;
-                    weaponPickupSound.play();
-                } catch (e) {}
                 console.log('After pickup - Player state:', {
                     weapons: player.weapons,
                     currentWeapon: player.currentWeapon,
@@ -2178,7 +2175,11 @@ function collectLizergunPickups() {
                 gunFrameIndex = 0;
                 console.log('Switched to lizergun');
             }
-            
+            // Play weapon pickup sound (always)
+            try {
+                weaponPickupSound.currentTime = 0;
+                weaponPickupSound.play();
+            } catch (e) {}
             // Spawn a new lizergun immediately to maintain the count
             spawnLizergunPickup();
         }
