@@ -2149,3 +2149,24 @@ lizergunImg.onload = () => {
         });
     }
 };
+
+// --- Play background music in a loop when user starts moving ---
+const bgMusic = new Audio('level1.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 1.0; // Set volume as desired
+let musicStarted = false;
+
+function startMusicOnMove(event) {
+    if (!musicStarted && (
+        event.key === 'ArrowUp' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowRight' ||
+        event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd'
+    )) {
+        bgMusic.play();
+        musicStarted = true;
+        window.removeEventListener('keydown', startMusicOnMove);
+    }
+}
+window.addEventListener('keydown', startMusicOnMove);
