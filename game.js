@@ -931,6 +931,10 @@ shotgunSound.volume = 1.0; // Set as desired
 const liserSound = new Audio('liser.wav');
 liserSound.volume = 1.0; // Set as desired
 
+// --- Load pistol fire sound ---
+const pistolSound = new Audio('pistol.wav');
+pistolSound.volume = 1.0; // Set as desired
+
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !fireball && player.ammo > 0) {
@@ -942,8 +946,10 @@ window.addEventListener('keydown', (e) => {
             } else if (player.currentWeapon === 'lizergun') {
                 liserSound.currentTime = 0;
                 liserSound.play();
+            } else if (player.currentWeapon === 'handgun') {
+                pistolSound.currentTime = 0;
+                pistolSound.play();
             }
-            // No sound for handgun
         } catch (e) {
             // Ignore play errors
         }
