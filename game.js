@@ -270,13 +270,12 @@ const cbCtx = checkerboardCanvas.getContext('2d');
     
     // Floor colors - dark browns with more contrast
     const floorColors = [
-        '#2d2715', // Dark brown
-        '#2d2d15', // Medium dark brown
-        '#261510', // Dark brown
-        '#212d15', // Medium dark brown
-        '#683c31', // Dark brown
-        '#573229'  // Medium dark brown
-
+        '#1a1a0f', // Darker brown
+        '#1a1a0f', // Darker brown
+        '#130f0a', // Darker brown
+        '#151a0f', // Darker brown
+        '#3c2318', // Darker brown
+        '#2d1c15'  // Darker brown
     ];
     
     // Ceiling colors - dark purples with more contrast
@@ -400,20 +399,53 @@ const cbCtx = checkerboardCanvas.getContext('2d');
     }
 })();
 
+// Add these variables at the top with other game state variables
+let bobOffset = 0;
+let bobDirection = 1;
+const BOB_SPEED = 0.008; // Reduced from 0.02 to 0.008 for much slower movement
+const BOB_AMOUNT = 0.02; // Keep the same amount of movement
+const BOB_VERTICAL = 0.01; // Keep the same vertical movement
+
+// In the draw3DView function, add the bobbing effect
 function draw3DView() {
-    // Draw ceiling with solid color
+    // Calculate bobbing effect when moving
+    if (movementPhysics.speed !== 0) {
+        bobOffset += BOB_SPEED * bobDirection;
+        if (bobOffset > 1) {
+            bobDirection = -1;
+        } else if (bobOffset < -1) {
+            bobDirection = 1;
+        }
+    } else {
+        // Smoothly return to center when not moving
+        if (bobOffset > 0) {
+            bobOffset = Math.max(0, bobOffset - BOB_SPEED);
+        } else if (bobOffset < 0) {
+            bobOffset = Math.min(0, bobOffset + BOB_SPEED);
+        }
+    }
+
+    // Draw ceiling with solid color (without bobbing)
     ctx.fillStyle = '#ccefff';
     ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
-    // Draw static checkerboard floor
+    
+    // Draw static checkerboard floor (without bobbing)
     ctx.drawImage(checkerboardCanvas, 0, 0);
-    // Draw horizon line (front wall)
+    
+    // Draw horizon line (front wall) (without bobbing)
     ctx.strokeStyle = '#222';
     ctx.beginPath();
     ctx.moveTo(0, Math.floor(canvas.height / 2));
     ctx.lineTo(canvas.width, Math.floor(canvas.height / 2));
     ctx.stroke();
 
-    // Cast rays and draw walls
+    // Apply bobbing only to walls and sprites
+    ctx.save();
+    const horizontalBob = Math.sin(bobOffset * Math.PI) * BOB_AMOUNT * canvas.width;
+    const verticalBob = Math.abs(Math.sin(bobOffset * Math.PI)) * BOB_VERTICAL * canvas.height;
+    ctx.translate(horizontalBob, verticalBob);
+
+    // Cast rays and draw walls (with bobbing)
     for (let i = 0; i < NUM_RAYS; i++) {
         const currentAngle = playerAngle - FOV / 2 + i * (FOV / NUM_RAYS);
         const { distance, wallSide, hitWall, wallX, rayDirX, rayDirY, wallType } = castRay(currentAngle);
@@ -692,6 +724,8 @@ function draw3DView() {
             }
         }
     });
+
+    ctx.restore(); // Restore the canvas state after applying bobbing
 }
 
 // Helper function to apply shadow to a color
