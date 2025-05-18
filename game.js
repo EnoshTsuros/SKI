@@ -594,6 +594,18 @@ function draw3DView() {
                 const imgToDraw = getNPCSprite(sprite.data);
                 if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
                     ctx.save();
+                    
+                    // Add fade out effect for dead NPCs
+                    if (sprite.data.state === 'dead') {
+                        const timeSinceDeath = Date.now() - sprite.data.deathTime;
+                        const fadeStartTime = 2000; // Start fading after 2 seconds
+                        const fadeDuration = 1000;  // Fade over 1 second
+                        if (timeSinceDeath > fadeStartTime) {
+                            const fadeProgress = Math.min(1, (timeSinceDeath - fadeStartTime) / fadeDuration);
+                            ctx.globalAlpha = 1 - fadeProgress;
+                        }
+                    }
+                    
                     if (sprite.data.isWalkingLeft) {
                         ctx.translate(screenX + spriteWidth / 2, spriteY);
                         ctx.scale(-1, 1);
@@ -1898,8 +1910,9 @@ function getNPCSprite(npc) {
 function updateNPCs() {
     npcs.forEach(npc => {
         if (npc.state === 'dead') {
-            // Check if death animation has completed
-            if (Date.now() - npc.deathTime >= 3000) {
+            // Check if death animation and fade out have completed
+            const timeSinceDeath = Date.now() - npc.deathTime;
+            if (timeSinceDeath >= 3000) { // 2 seconds visible + 1 second fade
                 // Remove the NPC after animation
                 const index = npcs.indexOf(npc);
                 if (index > -1) {
@@ -2299,8 +2312,9 @@ niroDeathSound.addEventListener('error', (e) => {
 function updateNPCs() {
     npcs.forEach(npc => {
         if (npc.state === 'dead') {
-            // Check if death animation has completed
-            if (Date.now() - npc.deathTime >= 3000) {
+            // Check if death animation and fade out have completed
+            const timeSinceDeath = Date.now() - npc.deathTime;
+            if (timeSinceDeath >= 3000) { // 2 seconds visible + 1 second fade
                 // Remove the NPC after animation
                 const index = npcs.indexOf(npc);
                 if (index > -1) {
