@@ -8,6 +8,9 @@ npcDeadImg.src = 'niro_dead.png';
 const npcInjuredImg = new Image();
 npcInjuredImg.src = 'niro_injured.png';
 
+const npcFallingImg = new Image();
+npcFallingImg.src = 'niro_falling.png';
+
 let fireVisible = false;
 
 // Generate a random map with walls (1) and paths (0)
@@ -595,35 +598,78 @@ function draw3DView() {
                 if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
                     ctx.save();
                     
-                    // Add fade out effect for dead NPCs
+                    // Add falling and fade out effect for dead NPCs
                     if (sprite.data.state === 'dead') {
                         const timeSinceDeath = Date.now() - sprite.data.deathTime;
-                        const fadeStartTime = 2000; // Start fading after 2 seconds
-                        const fadeDuration = 1000;  // Fade over 1 second
-                        if (timeSinceDeath > fadeStartTime) {
-                            const fadeProgress = Math.min(1, (timeSinceDeath - fadeStartTime) / fadeDuration);
-                            ctx.globalAlpha = 1 - fadeProgress;
+                        
+                        if (timeSinceDeath < 2000) {
+                            // Calculate falling position (move down slightly)
+                            const fallProgress = timeSinceDeath / 800;
+                            const fallOffset = spriteHeight * 0.4 * fallProgress;
+                            
+                            // Apply translation for falling movement
+                            ctx.translate(screenX, spriteY + fallOffset);
+                            ctx.translate(-spriteWidth / 2, -spriteHeight / 2);
+                            
+                            // Draw the falling sprite
+                            ctx.drawImage(
+                                imgToDraw,
+                                0,
+                                0,
+                                spriteWidth,
+                                spriteHeight
+                            );
+                        } else {
+                            // Fade out effect for death animation
+                            const fadeStartTime = 2000; // Start fading after falling animation
+                            const fadeDuration = 1000;  // Fade over 1 second
+                            if (timeSinceDeath > fadeStartTime) {
+                                const fadeProgress = Math.min(1, (timeSinceDeath - fadeStartTime) / fadeDuration);
+                                ctx.globalAlpha = 1 - fadeProgress;
+                            }
+                            
+                            // Draw the death sprite
+                            if (sprite.data.isWalkingLeft) {
+                                ctx.translate(screenX + spriteWidth / 2, spriteY);
+                                ctx.scale(-1, 1);
+                                ctx.drawImage(
+                                    imgToDraw,
+                                    0,
+                                    0,
+                                    spriteWidth,
+                                    spriteHeight
+                                );
+                            } else {
+                                ctx.drawImage(
+                                    imgToDraw,
+                                    screenX - spriteWidth / 2,
+                                    spriteY,
+                                    spriteWidth,
+                                    spriteHeight
+                                );
+                            }
                         }
-                    }
-                    
-                    if (sprite.data.isWalkingLeft) {
-                        ctx.translate(screenX + spriteWidth / 2, spriteY);
-                        ctx.scale(-1, 1);
-                        ctx.drawImage(
-                            imgToDraw,
-                            0,
-                            0,
-                            spriteWidth,
-                            spriteHeight
-                        );
                     } else {
-                        ctx.drawImage(
-                            imgToDraw,
-                            screenX - spriteWidth / 2,
-                            spriteY,
-                            spriteWidth,
-                            spriteHeight
-                        );
+                        // Normal drawing for non-dead NPCs
+                        if (sprite.data.isWalkingLeft) {
+                            ctx.translate(screenX + spriteWidth / 2, spriteY);
+                            ctx.scale(-1, 1);
+                            ctx.drawImage(
+                                imgToDraw,
+                                0,
+                                0,
+                                spriteWidth,
+                                spriteHeight
+                            );
+                        } else {
+                            ctx.drawImage(
+                                imgToDraw,
+                                screenX - spriteWidth / 2,
+                                spriteY,
+                                spriteWidth,
+                                spriteHeight
+                            );
+                        }
                     }
                     ctx.restore();
                 }
@@ -1037,6 +1083,11 @@ window.addEventListener('keydown', (e) => {
             const ray = castRay(angleToNPC);
             // Only hit if the ray distance is greater than or equal to the NPC distance (no wall in between)
             if (ray.distance >= closestDist - 0.2) { // 0.2 margin for hitbox
+                // Skip if NPC is already dead
+                if (closestNPC.state === 'dead') {
+                    return;
+                }
+                
                 // Calculate damage based on weapon type
                 let damage = 0;
                 if (player.currentWeapon === 'handgun') {
@@ -1075,9 +1126,11 @@ window.addEventListener('keydown', (e) => {
                         console.error('Exception playing death sound:', e);
                     }
                     
-                    // Set death state and timer
-                    closestNPC.state = 'dead';
-                    closestNPC.deathTime = Date.now();
+                    // Set death state and timer only if not already dead
+                    if (closestNPC.state !== 'dead') {
+                        closestNPC.state = 'dead';
+                        closestNPC.deathTime = Date.now();
+                    }
                 }
             } else {
                 console.log('NPC is behind a wall, not hit');
@@ -1843,6 +1896,11 @@ npcs.push({
 function getNPCSprite(npc) {
     // Handle death state
     if (npc.state === 'dead') {
+        const timeSinceDeath = Date.now() - npc.deathTime;
+        if (timeSinceDeath < 2000) {
+            // Show falling animation for first 2 seconds
+            return npcFallingImg;
+        }
         return npcDeadImg;
     }
     
