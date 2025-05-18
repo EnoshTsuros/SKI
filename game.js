@@ -2108,6 +2108,9 @@ function collectShotgunPickups() {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 0.6) {
             shotgunPickups.splice(i, 1);
+            // Add ammo regardless of whether the weapon is new or not
+            player.ammo += 10;
+            
             // Add shotgun to player's weapons if not already owned
             if (!player.collectedWeapons.has('shotgun')) {
                 player.weapons.push('shotgun');
@@ -2177,6 +2180,9 @@ function collectLizergunPickups() {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 0.6) {
             lizergunPickups.splice(i, 1);
+            // Add ammo regardless of whether the weapon is new or not
+            player.ammo += 10;
+            
             // Add lizergun to player's weapons if not already owned
             if (!player.collectedWeapons.has('lizergun')) {
                 player.weapons.push('lizergun');
