@@ -605,7 +605,7 @@ function draw3DView() {
                         if (timeSinceDeath < 2000) {
                             // Calculate falling position (move down slightly)
                             const fallProgress = timeSinceDeath / 800;
-                            const fallOffset = spriteHeight * 0.4 * fallProgress;
+                            const fallOffset = spriteHeight * 0.15 * fallProgress; // Reduced from 0.4 to 0.15 for smaller movement
                             
                             // Apply translation for falling movement
                             ctx.translate(screenX, spriteY + fallOffset);
