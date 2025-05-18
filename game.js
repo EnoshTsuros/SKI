@@ -402,27 +402,16 @@ const cbCtx = checkerboardCanvas.getContext('2d');
 // Add these variables at the top with other game state variables
 let bobOffset = 0;
 let bobDirection = 1;
-const BOB_SPEED = 0.008; // Reduced from 0.02 to 0.008 for much slower movement
-const BOB_AMOUNT = 0.02; // Keep the same amount of movement
+const BOB_SPEED = 0.02; // Keep the same speed
+const BOB_AMOUNT = 0.05; // Increased from 0.02 to 0.05 for wider swings
 const BOB_VERTICAL = 0.01; // Keep the same vertical movement
 
 // In the draw3DView function, add the bobbing effect
 function draw3DView() {
-    // Calculate bobbing effect when moving
-    if (movementPhysics.speed !== 0) {
-        bobOffset += BOB_SPEED * bobDirection;
-        if (bobOffset > 1) {
-            bobDirection = -1;
-        } else if (bobOffset < -1) {
-            bobDirection = 1;
-        }
-    } else {
-        // Smoothly return to center when not moving
-        if (bobOffset > 0) {
-            bobOffset = Math.max(0, bobOffset - BOB_SPEED);
-        } else if (bobOffset < 0) {
-            bobOffset = Math.min(0, bobOffset + BOB_SPEED);
-        }
+    // Calculate bobbing effect with smooth left-to-right motion
+    bobOffset += BOB_SPEED;
+    if (bobOffset > Math.PI * 2) {
+        bobOffset = 0;
     }
 
     // Draw ceiling with solid color (without bobbing)
@@ -439,10 +428,10 @@ function draw3DView() {
     ctx.lineTo(canvas.width, Math.floor(canvas.height / 2));
     ctx.stroke();
 
-    // Apply bobbing only to walls and sprites
+    // Apply bobbing to walls and sprites
     ctx.save();
-    const horizontalBob = Math.sin(bobOffset * Math.PI) * BOB_AMOUNT * canvas.width;
-    const verticalBob = Math.abs(Math.sin(bobOffset * Math.PI)) * BOB_VERTICAL * canvas.height;
+    const horizontalBob = Math.sin(bobOffset) * BOB_AMOUNT * canvas.width;
+    const verticalBob = Math.abs(Math.sin(bobOffset)) * BOB_VERTICAL * canvas.height;
     ctx.translate(horizontalBob, verticalBob);
 
     // Cast rays and draw walls (with bobbing)
