@@ -1,3 +1,13 @@
+// Add with other image declarations at the top of the file
+const npcImg = new Image();
+npcImg.src = 'niro_standing.png';
+
+const npcDeadImg = new Image();
+npcDeadImg.src = 'niro_dead.png';
+
+const npcInjuredImg = new Image();
+npcInjuredImg.src = 'niro_injured.png';
+
 let fireVisible = false;
 
 // Generate a random map with walls (1) and paths (0)
@@ -569,11 +579,16 @@ function draw3DView() {
 
             const spriteScale = sprite.type === 'shotgun' ? 0.35 : 
                               sprite.type === 'bullet' ? 0.25 : 
-                              sprite.type === 'lizergun' ? 0.28 : 0.7; // Increased lizergun scale from 0.2 to 0.28
+                              sprite.type === 'lizergun' ? 0.28 : 0.7;
             const spriteHeight = Math.abs(canvas.height / sprite.dist * spriteScale);
             const spriteWidth = spriteHeight;
             const floorLine = (canvas.height / 2) + (canvas.height / (2 * sprite.dist));
-            const spriteY = floorLine - spriteHeight;
+            let spriteY = floorLine - spriteHeight;
+
+            // Adjust Y position for dead NPCs
+            if (sprite.type === 'npc' && sprite.data.state === 'dead') {
+                spriteY += spriteHeight * 0.3; // Reduced from 0.5 to 0.3 to position it higher
+            }
 
             if (sprite.type === 'npc') {
                 const imgToDraw = getNPCSprite(sprite.data);
@@ -1036,8 +1051,13 @@ window.addEventListener('keydown', (e) => {
                     } catch (e) {
                         console.error('Exception playing death sound:', e);
                     }
-                    const idx = npcs.indexOf(closestNPC);
-                    if (idx !== -1) npcs.splice(idx, 1);
+                    
+                    // Set death state and timer
+                    closestNPC.state = 'dead';
+                    closestNPC.deathTime = Date.now();
+                    
+                    // Don't remove the NPC immediately, let it stay for the death animation
+                    // The updateNPCs function will handle the removal after the animation
                 }
             } else {
                 console.log('NPC is behind a wall, not hit');
@@ -1691,14 +1711,8 @@ function collectBulletPickups() {
     }
 }
 
-const npcImg = new Image();
-npcImg.src = 'niro_standing.png';
-
 const npcs = [];
 const maxNPCs = 15;
-
-const npcInjuredImg = new Image();
-npcInjuredImg.src = 'niro_injured.png';
 
 // Restore the getEmptyCellsForNPC function
 function getEmptyCellsForNPC() {
@@ -1828,6 +1842,12 @@ npcs.push({
 
 // Helper function to get the appropriate sprite for NPC movement
 function getNPCSprite(npc) {
+    // Handle death state
+    if (npc.state === 'dead') {
+        return npcDeadImg;
+    }
+    
+    // Handle injured state
     if (npc.state === 'injured' && Date.now() < npc.injuredUntil) {
         if (!npcInjuredWalkingImages.right.length) {
             npc.isWalkingLeft = false;
@@ -1890,6 +1910,22 @@ function getNPCSprite(npc) {
 // Update the NPC movement function to handle animation
 function updateNPCs() {
     npcs.forEach(npc => {
+        if (npc.state === 'dead') {
+            // Check if death animation has completed
+            if (Date.now() - npc.deathTime >= 3000) {
+                // Remove the NPC after animation
+                const index = npcs.indexOf(npc);
+                if (index > -1) {
+                    npcs.splice(index, 1);
+                }
+            }
+            return; // Skip movement updates for dead NPCs
+        }
+        
+        if (npc.health <= 0) {
+            return;
+        }
+        
         npc.lastX = npc.x;
         npc.lastY = npc.y;
 
@@ -2297,12 +2333,19 @@ niroDeathSound.addEventListener('error', (e) => {
 // In the updateNPCs function, modify the health check section
 function updateNPCs() {
     npcs.forEach(npc => {
-        if (npc.health <= 0) {
-            // Remove the NPC
-            const index = npcs.indexOf(npc);
-            if (index > -1) {
-                npcs.splice(index, 1);
+        if (npc.state === 'dead') {
+            // Check if death animation has completed
+            if (Date.now() - npc.deathTime >= 3000) {
+                // Remove the NPC after animation
+                const index = npcs.indexOf(npc);
+                if (index > -1) {
+                    npcs.splice(index, 1);
+                }
             }
+            return; // Skip movement updates for dead NPCs
+        }
+        
+        if (npc.health <= 0) {
             return;
         }
         
