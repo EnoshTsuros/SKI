@@ -1983,23 +1983,6 @@ function getNPCSprite(npc) {
 // Update the NPC movement function to handle animation
 function updateNPCs() {
     npcs.forEach(npc => {
-        if (npc.state === 'dead') {
-            // Check if death animation and fade out have completed
-            const timeSinceDeath = Date.now() - npc.deathTime;
-            if (timeSinceDeath >= 3000) { // 2 seconds visible + 1 second fade
-                // Remove the NPC after animation
-                const index = npcs.indexOf(npc);
-                if (index > -1) {
-                    npcs.splice(index, 1);
-                }
-            }
-            return; // Skip movement updates for dead NPCs
-        }
-        
-        if (npc.health <= 0) {
-            return;
-        }
-        
         npc.lastX = npc.x;
         npc.lastY = npc.y;
 
@@ -2383,27 +2366,4 @@ niroDeathSound.addEventListener('error', (e) => {
 // ... existing code ...
 
 // In the updateNPCs function, modify the health check section
-function updateNPCs() {
-    npcs.forEach(npc => {
-        if (npc.state === 'dead') {
-            // Check if death animation and fade out have completed
-            const timeSinceDeath = Date.now() - npc.deathTime;
-            if (timeSinceDeath >= 3000) { // 2 seconds visible + 1 second fade
-                // Remove the NPC after animation
-                const index = npcs.indexOf(npc);
-                if (index > -1) {
-                    npcs.splice(index, 1);
-                }
-            }
-            return; // Skip movement updates for dead NPCs
-        }
-        
-        if (npc.health <= 0) {
-            return;
-        }
-        
-        // ... rest of the updateNPCs function remains unchanged ...
-    });
-}
-
 // ... rest of the file remains unchanged ...
