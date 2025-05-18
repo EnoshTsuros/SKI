@@ -1020,6 +1020,22 @@ window.addEventListener('keydown', (e) => {
                     // Ignore play errors
                 }
                 if (closestNPC.health <= 0) {
+                    // Play death sound when NPC is killed
+                    console.log('NPC killed, attempting to play death sound');
+                    try {
+                        niroDeathSound.currentTime = 0;
+                        niroDeathSound.muted = false; // Ensure it's not muted
+                        const playPromise = niroDeathSound.play();
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                console.log('Death sound played successfully');
+                            }).catch(error => {
+                                console.error('Error playing death sound:', error);
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Exception playing death sound:', e);
+                    }
                     const idx = npcs.indexOf(closestNPC);
                     if (idx !== -1) npcs.splice(idx, 1);
                 }
@@ -2255,3 +2271,43 @@ function startMusicOnMove(event) {
     }
 }
 window.addEventListener('keydown', startMusicOnMove);
+
+// Add to the sound loading section at the top of the file
+const niroDeathSound = new Audio('niro_death.wav');
+niroDeathSound.volume = 1.0; // Increase volume to maximum
+niroDeathSound.muted = false; // Ensure it's not muted
+
+// Add load event listener to verify sound loading
+niroDeathSound.addEventListener('canplaythrough', () => {
+    console.log('Death sound loaded successfully');
+    // Test play the sound when it loads
+    niroDeathSound.play().then(() => {
+        console.log('Test play successful');
+    }).catch(error => {
+        console.error('Test play failed:', error);
+    });
+});
+
+niroDeathSound.addEventListener('error', (e) => {
+    console.error('Error loading death sound:', e);
+});
+
+// ... existing code ...
+
+// In the updateNPCs function, modify the health check section
+function updateNPCs() {
+    npcs.forEach(npc => {
+        if (npc.health <= 0) {
+            // Remove the NPC
+            const index = npcs.indexOf(npc);
+            if (index > -1) {
+                npcs.splice(index, 1);
+            }
+            return;
+        }
+        
+        // ... rest of the updateNPCs function remains unchanged ...
+    });
+}
+
+// ... rest of the file remains unchanged ...
