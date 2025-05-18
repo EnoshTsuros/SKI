@@ -602,13 +602,13 @@ function draw3DView() {
                     if (sprite.data.state === 'dead') {
                         const timeSinceDeath = Date.now() - sprite.data.deathTime;
                         
-                        if (timeSinceDeath < 2000) {
+                        if (timeSinceDeath < 500) { // Reduced from 2000ms to 500ms
                             // Calculate falling position (move down slightly)
-                            const fallProgress = timeSinceDeath / 800;
-                            const fallOffset = spriteHeight * 0.15 * fallProgress; // Reduced from 0.4 to 0.15 for smaller movement
+                            const fallProgress = timeSinceDeath / 500; // Reduced from 800ms to 500ms
+                            const fallOffset = spriteHeight * 0.15 * fallProgress;
                             
-                            // Apply translation for falling movement
-                            ctx.translate(screenX, spriteY + fallOffset);
+                            // Apply translation for falling movement, starting from a lower position
+                            ctx.translate(screenX, spriteY + (spriteHeight * 0.1) + fallOffset); // Added initial offset of 10% of sprite height
                             ctx.translate(-spriteWidth / 2, -spriteHeight / 2);
                             
                             // Draw the falling sprite
@@ -621,8 +621,8 @@ function draw3DView() {
                             );
                         } else {
                             // Fade out effect for death animation
-                            const fadeStartTime = 2000; // Start fading after falling animation
-                            const fadeDuration = 1000;  // Fade over 1 second
+                            const fadeStartTime = 500; // Reduced from 2000 to match new falling duration
+                            const fadeDuration = 1000;  // Keep fade duration the same
                             if (timeSinceDeath > fadeStartTime) {
                                 const fadeProgress = Math.min(1, (timeSinceDeath - fadeStartTime) / fadeDuration);
                                 ctx.globalAlpha = 1 - fadeProgress;
