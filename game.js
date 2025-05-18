@@ -922,13 +922,14 @@ function updatePlayer() {
     }
 }
 
-// Player state as an object
+// Modify the player state to include collected weapons
 const player = {
     health: 100,
     arms: 1,
     ammo: 100,
     weapons: ['handgun'], // Array of weapons the player has
-    currentWeapon: 'handgun' // Currently selected weapon
+    currentWeapon: 'handgun', // Currently selected weapon
+    collectedWeapons: new Set(['handgun']) // Track which weapons have been collected
 };
 
 // Fireball state
@@ -1024,7 +1025,17 @@ window.addEventListener('keydown', (e) => {
             const ray = castRay(angleToNPC);
             // Only hit if the ray distance is greater than or equal to the NPC distance (no wall in between)
             if (ray.distance >= closestDist - 0.2) { // 0.2 margin for hitbox
-                closestNPC.health -= 25;
+                // Calculate damage based on weapon type
+                let damage = 0;
+                if (player.currentWeapon === 'handgun') {
+                    damage = 16.67; // 100/6 = ~16.67 damage per shot to kill in 6 hits
+                } else if (player.currentWeapon === 'shotgun') {
+                    damage = 33.33; // 100/3 = ~33.33 damage per shot to kill in 3 hits
+                } else if (player.currentWeapon === 'lizergun') {
+                    damage = 50; // 100/2 = 50 damage per shot to kill in 2 hits
+                }
+
+                closestNPC.health -= damage;
                 closestNPC.state = 'injured';
                 closestNPC.injuredUntil = Date.now() + 1000;
                 // Play hurt sound
@@ -1039,7 +1050,7 @@ window.addEventListener('keydown', (e) => {
                     console.log('NPC killed, attempting to play death sound');
                     try {
                         niroDeathSound.currentTime = 0;
-                        niroDeathSound.muted = false; // Ensure it's not muted
+                        niroDeathSound.muted = false;
                         const playPromise = niroDeathSound.play();
                         if (playPromise !== undefined) {
                             playPromise.then(() => {
@@ -1055,9 +1066,6 @@ window.addEventListener('keydown', (e) => {
                     // Set death state and timer
                     closestNPC.state = 'dead';
                     closestNPC.deathTime = Date.now();
-                    
-                    // Don't remove the NPC immediately, let it stay for the death animation
-                    // The updateNPCs function will handle the removal after the animation
                 }
             } else {
                 console.log('NPC is behind a wall, not hit');
@@ -1299,78 +1307,20 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Update drawGun to handle different weapons
+// Modify the drawGun function to only show new weapons
 function drawGun() {
     const barHeight = 24;
     let gunImg;
     let scale, gunX, gunY;
     
-    if (player.currentWeapon === 'shotgun') {
+    if (player.currentWeapon === 'shotgun' && player.collectedWeapons.has('shotgun')) {
         if (shotgunImages[gunFrameIndex]) {
             gunImg = shotgunImages[gunFrameIndex];
             scale = 1.2;
             const gunWidth = gunImg.width * scale;
             const gunHeight = gunImg.height * scale;
-            gunX = canvas.width / 2 - gunWidth / 2; // Centered horizontally
-            gunY = canvas.height - gunHeight - 80; // Moved up from bottom (changed from -60 to -100)
-            
-            // Debug the canvas content
-            console.log('Shotgun canvas details:', {
-                width: gunImg.width,
-                height: gunImg.height,
-                scale: scale,
-                finalWidth: gunWidth,
-                finalHeight: gunHeight,
-                position: { x: gunX, y: gunY }
-            });
-
-            // Draw with explicit dimensions
-            ctx.save();
-            ctx.drawImage(
-                gunImg,
-                0, 0, gunImg.width, gunImg.height,  // Source rectangle
-                gunX, gunY, gunWidth, gunHeight     // Destination rectangle
-            );
-            ctx.restore();
-        } else {
-            console.error('Shotgun frame not available:', gunFrameIndex);
-        }
-    } else if (player.currentWeapon === 'handgun' && handgunImages[gunFrameIndex]) {
-        gunImg = handgunImages[gunFrameIndex];
-        scale = 0.35;
-        const gunWidth = gunImg.width * scale;
-        const gunHeight = gunImg.height * scale;
-        gunX = canvas.width / 2 - gunWidth / 2 + 50;
-        gunY = canvas.height - barHeight - gunHeight - 5;
-        
-        ctx.save();
-        ctx.drawImage(
-            gunImg,
-            0, 0, gunImg.width, gunImg.height,  // Source rectangle
-            gunX, gunY, gunWidth, gunHeight     // Destination rectangle
-        );
-        ctx.restore();
-    } else if (player.currentWeapon === 'lizergun') {
-        if (lizergunImages[gunFrameIndex]) {
-            gunImg = lizergunImages[gunFrameIndex];
-            scale = 0.4;
-            const gunWidth = gunImg.width * scale;
-            const gunHeight = gunImg.height * scale;
-            let gunX = canvas.width / 2 - gunWidth / 2;
-            
-            // Add horizontal shift when shooting (frames 1-3)
-            if (gunFrameIndex > 0 && gunFrameIndex < 4) {
-                gunX += 40;
-            }
-            
-            gunY = canvas.height - gunHeight - 2;
-            
-            console.log('Drawing lizergun:', {
-                frame: gunFrameIndex,
-                scale: scale,
-                position: { x: gunX, y: gunY },
-                size: { width: gunWidth, height: gunHeight }
-            });
+            gunX = canvas.width / 2 - gunWidth / 2;
+            gunY = canvas.height - gunHeight - 80;
             
             ctx.save();
             ctx.drawImage(
@@ -1379,8 +1329,45 @@ function drawGun() {
                 gunX, gunY, gunWidth, gunHeight
             );
             ctx.restore();
-        } else {
-            console.error('Lizergun frame not available:', gunFrameIndex);
+        }
+    } else if (player.currentWeapon === 'handgun' && player.collectedWeapons.has('handgun')) {
+        if (handgunImages[gunFrameIndex]) {
+            gunImg = handgunImages[gunFrameIndex];
+            scale = 0.35;
+            const gunWidth = gunImg.width * scale;
+            const gunHeight = gunImg.height * scale;
+            gunX = canvas.width / 2 - gunWidth / 2 + 50;
+            gunY = canvas.height - barHeight - gunHeight - 5;
+            
+            ctx.save();
+            ctx.drawImage(
+                gunImg,
+                0, 0, gunImg.width, gunImg.height,
+                gunX, gunY, gunWidth, gunHeight
+            );
+            ctx.restore();
+        }
+    } else if (player.currentWeapon === 'lizergun' && player.collectedWeapons.has('lizergun')) {
+        if (lizergunImages[gunFrameIndex]) {
+            gunImg = lizergunImages[gunFrameIndex];
+            scale = 0.4;
+            const gunWidth = gunImg.width * scale;
+            const gunHeight = gunImg.height * scale;
+            let gunX = canvas.width / 2 - gunWidth / 2;
+            
+            if (gunFrameIndex > 0 && gunFrameIndex < 4) {
+                gunX += 40;
+            }
+            
+            gunY = canvas.height - gunHeight - 2;
+            
+            ctx.save();
+            ctx.drawImage(
+                gunImg,
+                0, 0, gunImg.width, gunImg.height,
+                gunX, gunY, gunWidth, gunHeight
+            );
+            ctx.restore();
         }
     }
 }
@@ -2112,7 +2099,7 @@ for (let i = 0; i < maxShotgunPickups; i++) {
     spawnShotgunPickup();
 }
 
-// Collect shotgun pickups when player is close
+// Modify the collectShotgunPickups function
 function collectShotgunPickups() {
     for (let i = shotgunPickups.length - 1; i >= 0; i--) {
         const s = shotgunPickups[i];
@@ -2120,31 +2107,17 @@ function collectShotgunPickups() {
         const dy = (s.y + 0.5) - playerY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 0.6) {
-            console.log('Before pickup - Player state:', {
-                weapons: player.weapons,
-                currentWeapon: player.currentWeapon,
-                ammo: player.ammo
-            });
             shotgunPickups.splice(i, 1);
             // Add shotgun to player's weapons if not already owned
-            if (!player.weapons.includes('shotgun')) {
+            if (!player.collectedWeapons.has('shotgun')) {
                 player.weapons.push('shotgun');
-                // Automatically switch to shotgun when collected
-                player.currentWeapon = 'shotgun';
-                gunFrameIndex = 0; // Reset gun animation frame
-                console.log('After pickup - Player state:', {
-                    weapons: player.weapons,
-                    currentWeapon: player.currentWeapon,
-                    ammo: player.ammo
-                });
-                console.log('New weapon acquired: shotgun and automatically equipped');
-            } else {
-                // If already owned, still switch to shotgun
+                player.collectedWeapons.add('shotgun');
+                // Only switch to shotgun if it's a new weapon
                 player.currentWeapon = 'shotgun';
                 gunFrameIndex = 0;
-                console.log('Switched to shotgun');
+                console.log('New weapon acquired: shotgun and automatically equipped');
             }
-            // Play weapon pickup sound (always)
+            // Play weapon pickup sound
             try {
                 weaponPickupSound.currentTime = 0;
                 weaponPickupSound.play();
@@ -2195,7 +2168,7 @@ for (let i = 0; i < maxLizergunPickups; i++) {
     spawnLizergunPickup();
 }
 
-// Collect lizergun pickups when player is close
+// Modify the collectLizergunPickups function
 function collectLizergunPickups() {
     for (let i = lizergunPickups.length - 1; i >= 0; i--) {
         const l = lizergunPickups[i];
@@ -2203,31 +2176,17 @@ function collectLizergunPickups() {
         const dy = (l.y + 0.5) - playerY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 0.6) {
-            console.log('Before pickup - Player state:', {
-                weapons: player.weapons,
-                currentWeapon: player.currentWeapon,
-                ammo: player.ammo
-            });
             lizergunPickups.splice(i, 1);
             // Add lizergun to player's weapons if not already owned
-            if (!player.weapons.includes('lizergun')) {
+            if (!player.collectedWeapons.has('lizergun')) {
                 player.weapons.push('lizergun');
-                // Automatically switch to lizergun when collected
-                player.currentWeapon = 'lizergun';
-                gunFrameIndex = 0; // Reset gun animation frame
-                console.log('After pickup - Player state:', {
-                    weapons: player.weapons,
-                    currentWeapon: player.currentWeapon,
-                    ammo: player.ammo
-                });
-                console.log('New weapon acquired: lizergun and automatically equipped');
-            } else {
-                // If already owned, still switch to lizergun
+                player.collectedWeapons.add('lizergun');
+                // Only switch to lizergun if it's a new weapon
                 player.currentWeapon = 'lizergun';
                 gunFrameIndex = 0;
-                console.log('Switched to lizergun');
+                console.log('New weapon acquired: lizergun and automatically equipped');
             }
-            // Play weapon pickup sound (always)
+            // Play weapon pickup sound
             try {
                 weaponPickupSound.currentTime = 0;
                 weaponPickupSound.play();
