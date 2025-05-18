@@ -602,27 +602,19 @@ function draw3DView() {
                     if (sprite.data.state === 'dead') {
                         const timeSinceDeath = Date.now() - sprite.data.deathTime;
                         
-                        if (timeSinceDeath < 500) { // Reduced from 2000ms to 500ms
-                            // Calculate falling position (move down slightly)
-                            const fallProgress = timeSinceDeath / 500; // Reduced from 800ms to 500ms
-                            const fallOffset = spriteHeight * 0.15 * fallProgress;
-                            
-                            // Apply translation for falling movement, starting from a lower position
-                            ctx.translate(screenX, spriteY + (spriteHeight * 0.1) + fallOffset); // Added initial offset of 10% of sprite height
-                            ctx.translate(-spriteWidth / 2, -spriteHeight / 2);
-                            
-                            // Draw the falling sprite
+                        if (timeSinceDeath < 1000) {
+                            // Just show the falling sprite for 1000ms
                             ctx.drawImage(
                                 imgToDraw,
-                                0,
-                                0,
+                                screenX - spriteWidth / 2,
+                                spriteY,
                                 spriteWidth,
                                 spriteHeight
                             );
                         } else {
-                            // Fade out effect for death animation
-                            const fadeStartTime = 500; // Reduced from 2000 to match new falling duration
-                            const fadeDuration = 1000;  // Keep fade duration the same
+                            // Death sprite with fade out (after 1000ms)
+                            const fadeStartTime = 1000;
+                            const fadeDuration = 2000;
                             if (timeSinceDeath > fadeStartTime) {
                                 const fadeProgress = Math.min(1, (timeSinceDeath - fadeStartTime) / fadeDuration);
                                 ctx.globalAlpha = 1 - fadeProgress;
@@ -1897,10 +1889,11 @@ function getNPCSprite(npc) {
     // Handle death state
     if (npc.state === 'dead') {
         const timeSinceDeath = Date.now() - npc.deathTime;
-        if (timeSinceDeath < 2000) {
-            // Show falling animation for first 2 seconds
+        if (timeSinceDeath < 1000) {
+            // Show falling sprite for first 1000ms
             return npcFallingImg;
         }
+        // After 1000ms, show death sprite
         return npcDeadImg;
     }
     
