@@ -119,15 +119,15 @@ const movementPhysics = {
 
 // Load wall texture
 const wallTexture = new Image();
-wallTexture.src = 'doom_wall.png';
+wallTexture.src = 'satanic-wall1.png';
 
 // Load building wall texture
 const buildingWallTexture = new Image();
-buildingWallTexture.src = 'doom_wall4.png';
+buildingWallTexture.src = 'satanic_wall2.png';
 
 // Load new wall textures
 const wall1Texture = new Image();
-wall1Texture.src = 'wall_1.png';
+wall1Texture.src = 'satanic_walld3.png';
 const door2Texture = new Image();
 door2Texture.src = 'door_2.png';
 
@@ -163,13 +163,13 @@ function drawLoading() {
 
 // Load additional wall textures
 const doomWall2Texture = new Image();
-doomWall2Texture.src = 'doom_wall2.png';
+doomWall2Texture.src = 'satanic_walld2.png';
 const doomWall3Texture = new Image();
-doomWall3Texture.src = 'doom_wall3.png';
+doomWall3Texture.src = 'satanoc_d1.png';
 const doomDoorTexture = new Image();
 doomDoorTexture.src = 'doom_door.png';
 const magicWallTexture = new Image();
-magicWallTexture.src = 'magic_wall.png';
+magicWallTexture.src = 'static_wall3.png';
 
 // Door animation state
 const doorsAnimating = {};
