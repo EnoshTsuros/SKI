@@ -137,16 +137,6 @@ function drawLoading() {
     ctx.textAlign = 'center';
 }
 
-// Load additional wall textures
-const doomWall2Texture = new Image();
-doomWall2Texture.src = 'satanic_walld2.png';
-const doomWall3Texture = new Image();
-doomWall3Texture.src = 'satanoc_d1.png';
-const doomDoorTexture = new Image();
-doomDoorTexture.src = 'doom_door.png';
-const magicWallTexture = new Image();
-magicWallTexture.src = 'static_wall3.png';
-
 // Door animation state
 const doorsAnimating = {};
 
@@ -1042,33 +1032,6 @@ const player = {
 // Fireball state
 let fireball = null;
 
-// --- Load NPC hurt sound ---
-const npcHurtSound = new Audio('niro_hurt.wav');
-npcHurtSound.volume = 1.0; // Set as desired
-
-// --- Load shotgun fire sound ---
-const shotgunSound = new Audio('shotgun.wav');
-shotgunSound.volume = 1.0; // Set as desired
-
-// --- Load liser fire sound ---
-const liserSound = new Audio('liser.wav');
-liserSound.volume = 1.0; // Set as desired
-
-// --- Load pistol fire sound ---
-const pistolSound = new Audio('pistol.wav');
-pistolSound.volume = 1.0; // Set as desired
-
-// --- Load door open sound ---
-const doorOpenSound = new Audio('dooropen.wav');
-doorOpenSound.volume = 1.0; // Set as desired
-
-// --- Load door close sound ---
-const doorCloseSound = new Audio('doorclose.wav');
-doorCloseSound.volume = 1.0; // Set as desired
-
-// --- Load weapon pickup sound ---
-const weaponPickupSound = new Audio('wpick.wav');
-weaponPickupSound.volume = 1.0; // Set as desired
 
 // Listen for Ctrl key to shoot fireball
 window.addEventListener('keydown', (e) => {
@@ -1340,10 +1303,6 @@ function updateDoorsAnimating() {
 }
 
 // Load and crop handgun.png into 4 transparent images
-const handgunSrc = 'handgun.png';
-const handgunImages = [];
-const handgunImg = new Image();
-handgunImg.src = handgunSrc;
 handgunImg.onload = () => {
     const frameWidth = handgunImg.width / 4;
     const frameHeight = handgunImg.height;
@@ -1366,10 +1325,6 @@ handgunImg.onload = () => {
 };
 
 // Load and crop shootgun.png into 4 transparent images
-const shotgunSrc = 'shootgun.png';
-const shotgunImages = [];
-const shotgunImg = new Image();
-shotgunImg.src = shotgunSrc;
 shotgunImg.onload = () => {
     console.log('Shotgun image loaded successfully:', {
         width: shotgunImg.width,
@@ -2164,10 +2119,6 @@ function checkNPCCollision(x, y) {
 }
 
 // --- Shotgun Pickup State ---
-const shotgunPickups = [];
-const maxShotgunPickups = 7; // Changed to 7 pickups
-const shotgunPickupImg = new Image();
-shotgunPickupImg.src = 'drop_shootgun.png';
 
 // Helper to get all empty cells not occupied by pickups
 function getEmptyCellsForShotgun() {
@@ -2235,10 +2186,6 @@ function collectShotgunPickups() {
 }
 
 // --- Lizergun Pickup State ---
-const lizergunPickups = [];
-const maxLizergunPickups = 7;
-const lizergunPickupImg = new Image();
-lizergunPickupImg.src = 'lizergun.png';
 
 // Helper to get all empty cells not occupied by pickups
 function getEmptyCellsForLizergun() {
@@ -2307,10 +2254,6 @@ function collectLizergunPickups() {
 }
 
 // Load and crop lizergun.png into 4 transparent images
-const lizergunSrc = 'liser_fps.png';
-const lizergunImages = [];
-const lizergunImg = new Image();
-lizergunImg.src = lizergunSrc;
 lizergunImg.onload = () => {
     console.log('Lizergun image loaded successfully:', {
         width: lizergunImg.width,
@@ -2356,10 +2299,6 @@ lizergunImg.onload = () => {
 };
 
 // --- Play background music in a loop when user starts moving ---
-const bgMusic = new Audio('doom_gate.mp3');
-bgMusic.loop = true;
-bgMusic.volume = 1.0; // Set volume as desired
-let musicStarted = false;
 
 function startMusicOnMove(event) {
     if (!musicStarted && (
@@ -2396,14 +2335,7 @@ niroDeathSound.addEventListener('error', (e) => {
     console.error('Error loading death sound:', e);
 });
 
-// ... existing code ...
-
-// In the updateNPCs function, modify the health check section
-// ... rest of the file remains unchanged ...
-
 // --- Lamp State ---
-const lampCount = 20; // Number of lamps to spawn
-const lamps = [];
 function spawnLamps() {
     // Find all empty cells
     const emptyCells = [];
