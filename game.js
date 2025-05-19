@@ -426,7 +426,10 @@ function draw3DView() {
 
     // Bobbing offsets
     const horizontalBob = Math.sin(bobOffset) * BOB_AMOUNT; // in world units
-    const verticalBob = Math.abs(Math.sin(bobOffset)) * BOB_VERTICAL * canvas.height;
+    // Make the swing harder at the top and bottom using a non-linear curve
+    const swingPhase = Math.abs(Math.sin(bobOffset));
+    const swingHard = Math.pow(swingPhase, 1.7); // Exponent > 1 for sharper peaks
+    const verticalBob = swingHard * BOB_VERTICAL * canvas.height;
 
     // Draw ceiling with solid color (without bobbing)
     ctx.fillStyle = '#ccefff';
