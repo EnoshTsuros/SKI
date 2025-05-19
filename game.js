@@ -570,8 +570,16 @@ function draw3DView() {
                 const spriteScale = 0.7; // Adjust for NPC size
                 const spriteHeight = Math.abs(canvas.height / dist * spriteScale);
                 const spriteWidth = spriteHeight * (imgToDraw.width / imgToDraw.height);
-                // Place sprite on the ground (bottom aligned)
-                const yGround = (canvas.height / 2) + verticalBob + (canvas.height / (2 * dist)) - spriteHeight;
+                
+                // Calculate Y position based on NPC state
+                let yGround;
+                if (npc.state === 'dead') {
+                    // Position dead NPCs lower on the floor
+                    yGround = (canvas.height / 2) + verticalBob + (canvas.height / (2 * dist)) - (spriteHeight * 0.3);
+                } else {
+                    // Normal position for living NPCs
+                    yGround = (canvas.height / 2) + verticalBob + (canvas.height / (2 * dist)) - spriteHeight;
+                }
                 
                 // Handle death animation and fade out
                 if (npc.state === 'dead') {
