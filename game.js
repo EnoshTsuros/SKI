@@ -1,19 +1,3 @@
-// Add with other image declarations at the top of the file
-const npcImg = new Image();
-npcImg.src = 'niro_standing.png';
-
-const npcDeadImg = new Image();
-npcDeadImg.src = 'niro_dead.png';
-
-const npcInjuredImg = new Image();
-npcInjuredImg.src = 'niro_injured.png';
-
-const npcFallingImg = new Image();
-npcFallingImg.src = 'niro_falling.png';
-
-const lampImg = new Image();
-lampImg.src = 'lamp.png';
-
 let fireVisible = false;
 
 // Generate a random map with walls (1) and paths (0)
@@ -130,27 +114,6 @@ const movementPhysics = {
     rotationSpeed: 0.02
 };
 
-// Load wall texture
-const wallTexture = new Image();
-wallTexture.src = 'satanic-wall1.png';
-
-// Load building wall texture
-const buildingWallTexture = new Image();
-buildingWallTexture.src = 'satanic_wall2.png';
-
-// Load new wall textures
-const wall1Texture = new Image();
-wall1Texture.src = 'satanic_walld3.png';
-const door2Texture = new Image();
-door2Texture.src = 'door_2.png';
-
-// Load DOOM Guy face images for animation
-const doomGuyFaceNormal = new Image();
-doomGuyFaceNormal.src = './doom_guy1.png';
-const doomGuyFaceBlink = new Image();
-doomGuyFaceBlink.src = './doom_guy_blinks.png';
-const doomGuyFaceSmile = new Image();
-doomGuyFaceSmile.src = './doom_guy_smile.png';
 
 let doomGuyFaceState = 'normal'; // 'normal', 'blink', 'smile'
 let doomGuyNextBlink = performance.now() + 2000 + Math.random() * 2000;
@@ -550,7 +513,18 @@ function draw3DView() {
     }
 
     // --- NPC Sprites (3D view) ---
-    npcs.forEach(npc => {
+    // Sort NPCs by distance from the player (farthest first)
+    const sortedNPCs = npcs
+        .map(npc => {
+            const dx = npc.x + 0.5 - staticPlayerX;
+            const dy = npc.y + 0.5 - staticPlayerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return { npc, dist };
+        })
+        .sort((a, b) => b.dist - a.dist)
+        .map(obj => obj.npc);
+
+    sortedNPCs.forEach(npc => {
         // Use the static player position and angle (no bobbing) for projection
         const dx = npc.x + 0.5 - staticPlayerX;
         const dy = npc.y + 0.5 - staticPlayerY;
