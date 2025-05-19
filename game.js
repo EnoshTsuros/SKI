@@ -549,9 +549,39 @@ function draw3DView() {
         }
     }
 
-    // --- Sprites (NPCs, pickups) ---
-    // (No change needed, as their screenY can use verticalBob if you want them to bob too)
-    // ... existing code for sprites ...
+    // --- NPC Sprites (3D view) ---
+    npcs.forEach(npc => {
+        // Use the static player position and angle (no bobbing) for projection
+        const dx = npc.x + 0.5 - staticPlayerX;
+        const dy = npc.y + 0.5 - staticPlayerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angleToNPC = Math.atan2(dy, dx);
+        let relAngle = angleToNPC - staticPlayerAngle;
+        while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+        while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+        if (Math.abs(relAngle) < FOV / 2 && dist > 0.2) {
+            const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+            // Check occlusion by wall (no bobbing offset)
+            const ray = castRay(angleToNPC, staticPlayerX, staticPlayerY);
+            if (ray.distance + 0.2 < dist) return; // occluded by wall
+            // Draw NPC sprite
+            const imgToDraw = getNPCSprite(npc);
+            if (imgToDraw && ((imgToDraw instanceof HTMLImageElement && imgToDraw.complete && imgToDraw.naturalWidth > 0) || imgToDraw instanceof HTMLCanvasElement)) {
+                const spriteScale = 0.7; // Adjust for NPC size
+                const spriteHeight = Math.abs(canvas.height / dist * spriteScale);
+                const spriteWidth = spriteHeight * (imgToDraw.width / imgToDraw.height);
+                // Place sprite on the ground (bottom aligned)
+                const yGround = (canvas.height / 2) + verticalBob + (canvas.height / (2 * dist)) - spriteHeight;
+                ctx.drawImage(
+                    imgToDraw,
+                    screenX - spriteWidth / 2,
+                    yGround,
+                    spriteWidth,
+                    spriteHeight
+                );
+            }
+        }
+    });
 
     // Add lamps as sprites (but high on the screen)
     lamps.forEach(lamp => {
