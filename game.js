@@ -2235,7 +2235,7 @@ lizergunImg.onload = () => {
 };
 
 // --- Play background music in a loop when user starts moving ---
-const bgMusic = new Audio('level1.mp3');
+const bgMusic = new Audio('doom_gate.mp3');
 bgMusic.loop = true;
 bgMusic.volume = 1.0; // Set volume as desired
 let musicStarted = false;
