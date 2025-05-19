@@ -572,13 +572,34 @@ function draw3DView() {
                 const spriteWidth = spriteHeight * (imgToDraw.width / imgToDraw.height);
                 // Place sprite on the ground (bottom aligned)
                 const yGround = (canvas.height / 2) + verticalBob + (canvas.height / (2 * dist)) - spriteHeight;
-                ctx.drawImage(
-                    imgToDraw,
-                    screenX - spriteWidth / 2,
-                    yGround,
-                    spriteWidth,
-                    spriteHeight
-                );
+                
+                // Handle death animation and fade out
+                if (npc.state === 'dead') {
+                    const timeSinceDeath = Date.now() - npc.deathTime;
+                    if (timeSinceDeath < 1000) {
+                        // Fade out over 1000ms
+                        const fadeProgress = timeSinceDeath / 1000;
+                        ctx.save();
+                        ctx.globalAlpha = 1 - fadeProgress;
+                        ctx.drawImage(
+                            imgToDraw,
+                            screenX - spriteWidth / 2,
+                            yGround,
+                            spriteWidth,
+                            spriteHeight
+                        );
+                        ctx.restore();
+                    }
+                } else {
+                    // Normal drawing for non-dead NPCs
+                    ctx.drawImage(
+                        imgToDraw,
+                        screenX - spriteWidth / 2,
+                        yGround,
+                        spriteWidth,
+                        spriteHeight
+                    );
+                }
             }
         }
     });
@@ -1797,11 +1818,10 @@ function getNPCSprite(npc) {
     if (npc.state === 'dead') {
         const timeSinceDeath = Date.now() - npc.deathTime;
         if (timeSinceDeath < 1000) {
-            // Show falling sprite for first 1000ms
-            return npcFallingImg;
+            // Show death sprite during fade out
+            return npcDeadImg;
         }
-        // After 1000ms, show death sprite
-        return npcDeadImg;
+        return null; // Don't draw after fade out
     }
     
     // Handle injured state
