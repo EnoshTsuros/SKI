@@ -11,6 +11,9 @@ npcInjuredImg.src = 'niro_injured.png';
 const npcFallingImg = new Image();
 npcFallingImg.src = 'niro_falling.png';
 
+const lampImg = new Image();
+lampImg.src = 'lamp.png';
+
 let fireVisible = false;
 
 // Generate a random map with walls (1) and paths (0)
@@ -544,6 +547,40 @@ function draw3DView() {
     // --- Sprites (NPCs, pickups) ---
     // (No change needed, as their screenY can use verticalBob if you want them to bob too)
     // ... existing code for sprites ...
+
+    // Add lamps as sprites (but high on the screen)
+    lamps.forEach(lamp => {
+        const dx = lamp.x + 0.5 - playerX;
+        const dy = lamp.y + 0.5 - playerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angleToLamp = Math.atan2(dy, dx);
+        let relAngle = angleToLamp - playerAngle;
+        while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+        while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+        if (Math.abs(relAngle) < FOV / 2 && dist > 0.2) {
+            const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+            // Check occlusion by wall
+            const bobX = Math.cos(playerAngle + Math.PI / 2) * Math.sin(bobOffset) * BOB_AMOUNT;
+            const bobY = Math.sin(playerAngle + Math.PI / 2) * Math.sin(bobOffset) * BOB_AMOUNT;
+            const ray = castRay(angleToLamp, playerX + bobX, playerY + bobY);
+            if (ray.distance + 0.2 < dist) return; // occluded by wall
+            // Draw lamp high on the screen (ceiling)
+            if (lampImg.complete && lampImg.naturalWidth > 0) {
+                const lampScale = 0.5;
+                const lampHeight = Math.abs(canvas.height / dist * lampScale);
+                const lampWidth = lampHeight * (lampImg.width / lampImg.height);
+                // Place lamp near the top (ceiling), but with some perspective
+                const yCeiling = (canvas.height / 2) - lampHeight * 1.2;
+                ctx.drawImage(
+                    lampImg,
+                    screenX - lampWidth / 2,
+                    yCeiling,
+                    lampWidth,
+                    lampHeight
+                );
+            }
+        }
+    });
 }
 
 // Draw the map (top-down view)
@@ -2180,3 +2217,25 @@ niroDeathSound.addEventListener('error', (e) => {
 
 // In the updateNPCs function, modify the health check section
 // ... rest of the file remains unchanged ...
+
+// --- Lamp State ---
+const lampCount = 20; // Number of lamps to spawn
+const lamps = [];
+function spawnLamps() {
+    // Find all empty cells
+    const emptyCells = [];
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+            if (map[y][x] === 0) {
+                emptyCells.push({x, y});
+            }
+        }
+    }
+    // Shuffle and pick lampCount positions
+    for (let i = 0; i < lampCount && emptyCells.length > 0; i++) {
+        const idx = Math.floor(Math.random() * emptyCells.length);
+        const pos = emptyCells.splice(idx, 1)[0];
+        lamps.push({ x: pos.x, y: pos.y });
+    }
+}
+spawnLamps();
