@@ -421,6 +421,11 @@ const BOB_VERTICAL = 0.01; // Keep the same vertical movement
 
 // In the draw3DView function, add the bobbing effect
 function draw3DView() {
+    // Store the static player position and angle before bobbing
+    const staticPlayerX = playerX;
+    const staticPlayerY = playerY;
+    const staticPlayerAngle = playerAngle;
+
     // Calculate bobbing effect with smooth left-to-right motion
     bobOffset += BOB_SPEED;
     if (bobOffset > Math.PI * 2) {
@@ -550,19 +555,18 @@ function draw3DView() {
 
     // Add lamps as sprites (but high on the screen)
     lamps.forEach(lamp => {
-        const dx = lamp.x + 0.5 - playerX;
-        const dy = lamp.y + 0.5 - playerY;
+        // Use the static player position and angle (no bobbing) for lamp projection
+        const dx = lamp.x + 0.5 - staticPlayerX;
+        const dy = lamp.y + 0.5 - staticPlayerY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const angleToLamp = Math.atan2(dy, dx);
-        let relAngle = angleToLamp - playerAngle;
+        let relAngle = angleToLamp - staticPlayerAngle;
         while (relAngle < -Math.PI) relAngle += Math.PI * 2;
         while (relAngle > Math.PI) relAngle -= Math.PI * 2;
         if (Math.abs(relAngle) < FOV / 2 && dist > 0.2) {
             const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
-            // Check occlusion by wall
-            const bobX = Math.cos(playerAngle + Math.PI / 2) * Math.sin(bobOffset) * BOB_AMOUNT;
-            const bobY = Math.sin(playerAngle + Math.PI / 2) * Math.sin(bobOffset) * BOB_AMOUNT;
-            const ray = castRay(angleToLamp, playerX + bobX, playerY + bobY);
+            // Check occlusion by wall (no bobbing offset)
+            const ray = castRay(angleToLamp, staticPlayerX, staticPlayerY);
             if (ray.distance + 0.2 < dist) return; // occluded by wall
             // Draw lamp high on the screen (ceiling)
             if (lampImg.complete && lampImg.naturalWidth > 0) {
