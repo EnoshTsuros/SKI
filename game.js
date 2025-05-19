@@ -716,6 +716,55 @@ function draw3DView() {
             }
         }
     });
+
+    // --- Lizergun Pickups (3D view) ---
+    const sortedLizergunPickups = lizergunPickups
+        .map(l => {
+            const dx = l.x + 0.5 - staticPlayerX;
+            const dy = l.y + 0.5 - staticPlayerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return { l, dist };
+        })
+        .sort((a, b) => b.dist - a.dist)
+        .map(obj => obj.l);
+
+    sortedLizergunPickups.forEach(l => {
+        const dx = l.x + 0.5 - staticPlayerX;
+        const dy = l.y + 0.5 - staticPlayerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angleToPickup = Math.atan2(dy, dx);
+        let relAngle = angleToPickup - staticPlayerAngle;
+        while (relAngle < -Math.PI) relAngle += Math.PI * 2;
+        while (relAngle > Math.PI) relAngle -= Math.PI * 2;
+        if (Math.abs(relAngle) < FOV / 2 && dist > 0.2) {
+            const screenX = Math.tan(relAngle) / Math.tan(FOV / 2) * (canvas.width / 2) + (canvas.width / 2);
+            // Check occlusion by wall
+            const ray = castRay(angleToPickup, staticPlayerX, staticPlayerY);
+            if (ray.distance + 0.2 < dist) return; // occluded by wall
+            // Draw lizergun pickup sprite or fallback circle
+            const spriteScale = 0.35; // Similar to shotgun pickups
+            const spriteHeight = Math.abs(canvas.height / dist * spriteScale);
+            const spriteWidth = spriteHeight;
+            const yGround = (canvas.height / 2) + verticalBob + (canvas.height / (2 * dist)) - spriteHeight;
+            if (lizergunPickupImg.complete && lizergunPickupImg.naturalWidth > 0) {
+                ctx.drawImage(
+                    lizergunPickupImg,
+                    screenX - spriteWidth / 2,
+                    yGround,
+                    spriteWidth,
+                    spriteHeight
+                );
+            } else {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(screenX, yGround + spriteHeight / 2, spriteWidth / 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#00f';
+                ctx.globalAlpha = 0.8;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+    });
 }
 
 // Draw the map (top-down view)
